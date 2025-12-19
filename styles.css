@@ -1,0 +1,486 @@
+/* Dark Theme for Crypto Analyzer */
+/* background-color: #121212; */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Висота viewport 100% */
+html,
+body {
+  height: 100%;
+}
+/* Темний фон, але НЕ на весь екран */
+body {
+  background-color: #121212;
+  color: #fff;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  padding: 0px 0;
+  display: flex;
+  justify-content: center;
+}
+/* Загальний контейнер */
+/* .container {
+  width: 400px;
+  max-width: 90vw;
+  margin: 0 auto;
+  padding: 20px 0;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  color: #ffffff;
+}  */
+
+/* Заголовок */
+.container h3 {
+  font-size: 18px;
+  font-weight: 600px;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+h3 {
+  color: #9dbdb2;
+  text-shadow: 0 2px 8px rgba(0, 123, 82, 0.193);
+  transition: all 1.4s ease;
+  font-family: 'Orbitron', sans-serif; /* Футуристичний шрифт */
+  font-weight: 700;
+}
+h3:hover {
+  color: #00a979;
+  text-shadow: 
+    0 0 10px #0a3125,
+    0 0 20px #03271c,
+    0 0 30px #00120c;
+}
+/* Обгортка для canvas + input */
+.wrapCanvas {
+  background: #0d1117;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+}
+
+.wrapCanvas:hover {
+  background: #161b22;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.wrapCanvas:active {
+  transform: translateY(5px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+input,
+.suggestions {
+  cursor: pointer;
+}
+/* Canvas */
+#miniChart {
+  width: 100%;
+  height: 80px;
+  border-radius: 6px;
+  background: #050810;
+  display: block;
+}
+
+/* Label + input */
+.symbolLabel {
+  font-size: 12px;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.symbolLabel input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #11161d;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.symbolLabel input:focus {
+  border-color: #4caf50;
+}
+
+/* Підказки */
+.suggestions {
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Output */
+.output {
+  margin-top: 10px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Повідомлення про ціну */
+#priceMessages {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+}
+
+/* .msg {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #0d1117;
+  color: #ffffff;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fadeInUp 2.25s ease forwards;
+} */
+
+.msg.up {
+  border-left-color: #4caf50;
+}
+
+.msg.down {
+  border-left-color: #f44336;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Футер */
+footer {
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.35);
+  user-select: none;
+}
+
+footer div {
+  opacity: 0.6;
+}
+
+/* collapsible */
+.collapsible {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 7px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+  user-select: none;
+  margin-bottom: 10px;
+}
+
+.collapsible:hover {
+  background-color: #3a3a3a;
+}
+
+.collapsible:active {
+  background-color: #444444;
+}
+
+.collapsible::after {
+  content: "▼";
+  float: right;
+  margin-left: 5px;
+  transition: transform 0.5s ease;
+  font-size: 12px;
+}
+
+.collapsible.active::after {
+  transform: rotate(-180deg);
+}
+
+.content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 1s ease;
+  background-color: #1a1a1a;
+  border-radius: 0 0 8px 8px;
+  padding: 0 12px;
+}
+
+/* .content div {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  color: #e0e0e0;
+  font-size: 13px;
+} */
+
+.content div:last-child {
+  border-bottom: none;
+}
+
+.content div strong {
+  color: #4fc3f7;
+}
+
+/* Анімація для #output при оновленні */
+#output {
+    transition: all 1.1s ease;
+}
+
+#output.updating {
+    animation: fadeInUp 1.1s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0.5;
+        transform: translateY(1px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#output.loading {
+    position: relative;
+    opacity: 0.6;
+}
+
+/* From Uiverse.io by iZOXVL */ 
+.boton-elegante {
+    display: inline-block;
+    text-decoration: none;
+  padding: 5px 3px;
+  width: 200px;
+  border: 2px solid #2c2c2c;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.4s ease;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+  /* margin: 10px auto; */
+}
+
+.boton-elegante::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  transform: scale(0);
+  transition: transform 0.5s ease;
+}
+
+.boton-elegante:hover::after {
+  transform: scale(4);
+}
+
+.boton-elegante:hover {
+  border-color: #666666;
+  background: #292929;
+}
+.boton-elegante a {
+    display: block;
+}
+/* countdown-wrapper */
+.countdown-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  /* gap: 10px; */
+  /* margin: 10px 0; */
+}
+
+#countdown {
+  color: #888;
+  font-size: 12px;
+}
+.flex-row {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+}
+
+.col {
+    flex: 1 1 50%;
+    max-width: 50%;
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+    box-sizing: border-box;
+  }
+/* score  */
+#marketStrengthBox {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: #c9c9c9;
+    width: 100%;
+}
+
+#marketStrengthTop {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    opacity: 0.85;
+}
+
+#marketStrengthValue {
+    font-weight: 600;
+}
+
+/* ✅ фон бару — нейтральний, але в палітрі */
+#marketStrengthBar {
+    width: 100%;
+    height: 6px;
+    background: rgba(136, 201, 161, 0.12); /* базовий soft green */
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+/* ✅ заливка — буде мінятися JS-ом */
+#marketStrengthFill {
+    height: 100%;
+    width: 0%;
+    background: #88c9a17b; /* default: consolidation */
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+#marketStrengthStatus {
+    font-size: 10px;
+    opacity: 0.65;
+}
+
+
+
+@media (max-width: 480px) {
+  .container {
+    width: 700px;
+    max-width: 100vw;
+    padding: 10px;
+  }
+  .container h3 {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  .wrapCanvas {
+    padding: 10px;
+    border-radius: 10px;
+    gap: 8px;
+  }
+
+  #miniChart {
+    height: 70px;
+    border-radius: 6px;
+  }
+
+  .symbolLabel {
+    font-size: 11px;
+  }
+
+  .symbolLabel input {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  #priceMessages .msg {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  footer {
+    margin-top: 14px;
+    padding-top: 8px;
+    font-size: 10px;
+  }
+}
+/* @media screen and (max-width: 430px) and (min-device-pixel-ratio: 3) {
+
+      .container {
+    max-width: 90vw !important;
+    padding: 18px 16px;
+  }
+
+  #miniChart {
+    height: 78px;
+  }
+
+  .symbolLabel input {
+    padding: 7px 10px;
+    border-radius: 8px;
+  }
+
+  footer {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+} */
+/* @media screen and (max-width: 420px) and (min-device-pixel-ratio: 3.5) {
+
+  #miniChart {
+    height: 82px; 
+  }
+
+  .symbolLabel input {
+    font-size: 13px;
+    padding: 7px 10px;
+  }
+
+  #priceMessages .msg {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  footer {
+    font-size: 11px;
+    opacity: 0.8;
+  }
+} */
