@@ -40,44 +40,13 @@ async function trackPrice() {
 
   const change = ((price - lastPrice) / lastPrice) * 100;
 
-  // Повідомляємо тільки якщо зміна >= 0.02%
+  // Повідомляємо тільки якщо зміна >= 0.01%
   if (Math.abs(change) >= 0.01) {
     const sign = change > 0 ? "+" : "";
     appendMessage(`🔔 ${symbol}: ${sign}${change.toFixed(2)}%`);
     lastPrice = price; // оновлюємо останню відому ціну
   }
 }
-
-// function appendMessage(text) {
-//     const box = document.getElementById("priceMessages");
-
-//     // Міняємо всі NEW на OLD
-//     Array.from(box.children).forEach(child => {
-//         if (child.querySelector('.badge')) {
-//             child.querySelector('.badge').innerText = 'OLD';
-//             child.querySelector('.badge').style.color = '#777';
-//         }
-//     });
-
-//     const div = document.createElement("div");
-//     div.className = "msg";
-//     div.style.fontSize = "11px";
-
-//     // Додаємо NEW до нового повідомлення
-//     div.innerHTML = `
-//         <span class="badge" style="color: #00ff88; font-weight: bold; margin-right: 8px;">NEW</span>
-//         ${text}
-//     `;
-
-//     box.prepend(div);
-
-//     while (box.children.length > 6) {
-//         box.removeChild(box.lastChild);
-//     }
-// }
-
-// // Інтервал оновлення
-// setInterval(trackPrice, 5000);
 
 // ===============================
 // STATE
