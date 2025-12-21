@@ -49,7 +49,8 @@
 }
 /* Красивий кастомний повзунок тільки для pctRangeSlider */
 .pctRangeSlider {
-  -webkit-appearance: none;
+  appearance: none;        /* ✅ стандарт */
+
   width: 100%;
   height: 12px;
   border-radius: 6px;
@@ -173,7 +174,7 @@
   box-shadow: 0 0 0 0 black;
 }
 
-.button:hover {
+/* .button:hover {
   transform: translateY(-2px) translateX(-1px);
   box-shadow: 2px 5px 0 0 black;
     transition: transform 0.3s ease, box-shadow 0.2s ease;
@@ -182,4 +183,8 @@
 .button:active {
   transform: translateY(2px) translateX(1px);
   box-shadow: 0 0 0 0 black;
+} */
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

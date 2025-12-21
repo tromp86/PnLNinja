@@ -198,27 +198,27 @@ entrySignalsText += "";
 
 switch (alignmentType) {
     case "full":
-        entrySignalsText += "✅ FULL ALIGNMENT — market structure is unified (ринок узгоджений).\n";
+        entrySignalsText += "✅ <strong>Full alignment</strong> — market structure is unified (ринок узгоджений).\n";
         entrySignalsText += "   → High directional clarity.\n";
         break;
 
     case "partial":
-        entrySignalsText += "🟡 PARTIAL ALIGNMENT — one structure dominates (домінує одна структура).\n";
+        entrySignalsText += "🟡 <strong>Partial alignment</strong> — one structure dominates (домінує одна структура).\n";
         entrySignalsText += "   → Moderate clarity.\n";
         break;
 
     case "mixed":
-        entrySignalsText += "🟠 MIXED MARKET — multiple structures active (змішаний ринок).\n";
+        entrySignalsText += "🟠 <strong>Mixed market</strong> — multiple structures active (змішаний ринок).\n";
         entrySignalsText += "   → Reduced predictability.\n";
         break;
 
     case "conflicted":
-        entrySignalsText += "🔴 CONFLICTED MARKET — opposing structures (конфліктуючі сценарії).\n";
+        entrySignalsText += "🔴 <strong>Conflicted market</strong> — opposing structures (конфліктуючі сценарії).\n";
         entrySignalsText += "   → High instability.\n";
         break;
 
     case "none":
-        entrySignalsText += "⚪ NO ACTIVE STRUCTURE — no clear context (немає структури).\n";
+        entrySignalsText += "⚪ <strong>No active structure</strong> — no clear context (немає структури).\n";
         entrySignalsText += "   → Low‑quality environment.\n";
         break;
 }
@@ -227,7 +227,7 @@ entrySignalsText += "\n";
 // =======================
 // ✅ ENTRY SIGNALS (AFTER MARKET CONTEXT)
 // =======================
-entrySignalsText += "📥 ENTRY SIGNALS\n";
+entrySignalsText += "📥 <strong>Entry Signals</strong>\n";
 
 
 if (activeEntrySignals.length === 0) {
