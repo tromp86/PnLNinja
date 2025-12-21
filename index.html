@@ -45,14 +45,22 @@
 
       <div id="output" class="output"></div>
      <div id="priceMessages"></div> 
-     
+
+     <div class="wrapCanvas">
+<canvas id="fibChart" width="800" height="70"
+  style="width:100%;margin-top:2px;">
+</canvas>
+</div>
  <footer>
-    <div>v.0151 pnlCalc</div>
+    <div>v.016 Fib</div>
     <span>designed by tromp86</span>
 </footer>
     </div>
 
-    <script></script>
+<script src="miniChart.js"></script>
+<script>
+  loadFibChartFromInput();
+</script>
     <!-- <script type="module" src="main.js"></script> -->
     <script type="module" src="mainRest.js"></script>
     <script src="changePrice.js"></script>

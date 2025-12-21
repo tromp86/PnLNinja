@@ -163,6 +163,7 @@ async function analyze() {
     }
 
     await loadMiniChart(symbol);
+await loadFibChart(symbol);
 
     if (!symbol.endsWith("USDT")) {
         symbol = symbol + "USDT";
@@ -306,6 +307,13 @@ loadSymbols();
 const input = document.getElementById("symbol");
 const box = document.getElementById("suggestions");
 
+// ✅ НОВА ФУНКЦІЯ
+function updateFibFromInput() {
+  let symbol = input.value.trim().toUpperCase();
+  if (!symbol) return;
+  loadFibChart(symbol);
+}
+
 input.addEventListener("input", () => {
   const value = input.value.trim().toUpperCase();
 
@@ -331,6 +339,7 @@ box.addEventListener("click", (e) => {
     box.style.display = "none";
     lastData = {};
     analyze();
+    updateFibFromInput();   // ✅ ДОДАНО
   }
 });
 
@@ -339,3 +348,6 @@ document.addEventListener("click", (e) => {
     box.style.display = "none";
   }
 });
+
+// ✅ Fib оновлюється при Enter або blur
+input.addEventListener("change", updateFibFromInput);
