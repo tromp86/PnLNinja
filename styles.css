@@ -452,15 +452,14 @@ footer div {
     max-width: 880px;
     margin: 0 auto;
     padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+
+    gap: 8px;
     box-sizing: border-box; /* ✅ важливо для Pixel */
   }
 
   .container h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 10px;
+    margin-bottom: 2px;
   }
 
   /* ✅ Canvas wrapper */
@@ -535,19 +534,18 @@ footer div {
 
   /* ✅ Buttons */
   .boton-elegante {
-    width: 60%;
+    width: 40%;
     font-size: 8px;
     padding: 5px 10px;
     margin: 8px 0;
     box-sizing: border-box;
   }
 
-  /* ✅ Footer */
-  footer {
-    margin-top: 20px;
-    padding-top: 10px;
-    font-size: 10px;
-    justify-content: center;
-    text-align: center; /* ✅ Pixel fix */
-  }
+/* ✅ Footer */
+footer {
+  margin-top: 20px;
+  padding-top: 1px;
+  font-size: 10px;
+  text-align: center;
+}
 }
