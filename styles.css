@@ -22,15 +22,7 @@ body {
   justify-content: center;
 }
 /* Загальний контейнер */
-/* .container {
-  width: 400px;
-  max-width: 90vw;
-  margin: 0 auto;
-  padding: 20px 0;
-  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, sans-serif;
-  color: #ffffff;
-}  */
+
 
 /* Заголовок */
 .container h3 {
@@ -399,88 +391,163 @@ footer div {
 }
 
 
+/* animated-header */
+.market-context {
+    animation: fadeSlide 0.35s ease-out;
+    white-space: pre-line;
+}
 
-@media (max-width: 480px) {
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+#progressLine {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#progressLine:hover {
+    opacity: 0.85;
+}
+#progressLine.compact {
+    padding: 4px !important;
+    height: 8px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    overflow: hidden !important;
+}
+
+#progressLine.compact * {
+    display: none !important;
+}
+
+/* ✅ Гарантована адаптація для Google Pixel / Android Chrome */
+@media (max-width: 500px) {
+
+  /* ✅ Фікс для Chrome dynamic toolbar */
+  :root {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    display: block; /* стабільний скрол */
+    overflow-x: hidden; /* ✅ прибирає горизонтальний скрол */
+    -webkit-text-size-adjust: 100%; /* ✅ фікс збільшення шрифту на Android */
+  }
+
   .container {
-    width: 700px;
-    max-width: 100vw;
-    padding: 10px;
-  }
-  .container h3 {
-    font-size: 17px;
-    margin-bottom: 10px;
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-sizing: border-box; /* ✅ важливо для Pixel */
   }
 
+  .container h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  /* ✅ Canvas wrapper */
   .wrapCanvas {
     padding: 10px;
     border-radius: 10px;
     gap: 8px;
+    box-sizing: border-box;
   }
 
   #miniChart {
     height: 70px;
     border-radius: 6px;
+    width: 100%; /* ✅ Pixel fix */
   }
 
+  /* ✅ Inputs */
   .symbolLabel {
     font-size: 11px;
   }
 
   .symbolLabel input {
     font-size: 12px;
-    padding: 6px 8px;
+    padding: 7px 10px;
+    width: 100%; /* ✅ Pixel fix */
+    box-sizing: border-box;
   }
 
+  /* ✅ Price messages */
   #priceMessages .msg {
     font-size: 11px;
     padding: 5px 8px;
   }
 
-  footer {
-    margin-top: 14px;
-    padding-top: 8px;
+  /* ✅ Flex columns */
+  .col {
+    max-width: 100%;
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+
+  .flex-row {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    font-size: 25px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap; /* ✅ Pixel fix */
+  }
+
+  /* ✅ Market Strength box */
+  #marketStrengthBox {
     font-size: 10px;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+
+  #marketStrengthStatus {
+    font-size: 9px;
+  }
+
+  /* ✅ MARKET CONTEXT & ENTRY SIGNALS text */
+  .market-context,
+  #entrySignalsContainer {
+    font-size: 13px;
+    line-height: 1.35;
+    white-space: pre-line;
+  }
+
+  /* ✅ Buttons */
+  .boton-elegante {
+    width: 60%;
+    font-size: 8px;
+    padding: 5px 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+  }
+
+  /* ✅ Footer */
+  footer {
+    margin-top: 20px;
+    padding-top: 10px;
+    font-size: 10px;
+    justify-content: center;
+    text-align: center; /* ✅ Pixel fix */
   }
 }
-/* @media screen and (max-width: 430px) and (min-device-pixel-ratio: 3) {
-
-      .container {
-    max-width: 90vw !important;
-    padding: 18px 16px;
-  }
-
-  #miniChart {
-    height: 78px;
-  }
-
-  .symbolLabel input {
-    padding: 7px 10px;
-    border-radius: 8px;
-  }
-
-  footer {
-    font-size: 11px;
-    letter-spacing: 0.06em;
-  }
-} */
-/* @media screen and (max-width: 420px) and (min-device-pixel-ratio: 3.5) {
-
-  #miniChart {
-    height: 82px; 
-  }
-
-  .symbolLabel input {
-    font-size: 13px;
-    padding: 7px 10px;
-  }
-
-  #priceMessages .msg {
-    font-size: 12px;
-    padding: 6px 10px;
-  }
-
-  footer {
-    font-size: 11px;
-    opacity: 0.8;
-  }
-} */

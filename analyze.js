@@ -15,46 +15,91 @@ function evaluateEntrySignals(ctx) {
 }
 
 // =======================
-// ✅ Market Strength Score (0–100)
+// ✅ Market Alignment (FULL / PARTIAL / MIXED / CONFLICTED / NONE)
+// =======================
+function getMarketAlignmentType(activeScenarios) {
+    if (!activeScenarios || activeScenarios.length === 0) return "none";
+
+    const categories = activeScenarios.map(s => s.category);
+    const unique = [...new Set(categories)];
+
+    // ✅ FULL ALIGNMENT: всі сценарії однієї категорії
+    if (unique.length === 1) return "full";
+
+    // ✅ CONFLICTED: протилежні категорії
+    const conflictPairs = [
+        ["Trend", "Reversion"],
+        ["Breakout", "Range"],
+        ["Momentum", "Range"]
+    ];
+
+    const isConflicted = conflictPairs.some(([a, b]) =>
+        unique.includes(a) && unique.includes(b)
+    );
+
+    if (isConflicted) return "conflicted";
+
+    // ✅ PARTIAL ALIGNMENT: є домінуюча категорія
+    const counts = unique.map(cat => ({
+        cat,
+        count: categories.filter(c => c === cat).length
+    }));
+
+    const maxCount = Math.max(...counts.map(c => c.count));
+    if (maxCount >= activeScenarios.length * 0.6) return "partial";
+
+    // ✅ MIXED MARKET: різні категорії без прямого конфлікту
+    return "mixed";
+}
+
+// =======================
+// ✅ Market Strength Score (0–100) — оновлена модель
 // =======================
 function computeMarketStrength(data, THRESHOLDS, activeScenarios, compositeActive) {
-    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    const clamp01 = v => Math.max(0, Math.min(1, v));
 
+    // ✅ Trend Strength (EMA alignment + MACD)
     const emaDiff = Math.abs(data.EMA8 - data.EMA21);
-    const trendNorm = clamp01(emaDiff / (data.ATR * 0.5 || 1));
-
+    const emaSlope = emaDiff / (data.ATR || 1);
     const macdTrend = data.MACD && data.MACD_Signal
         ? clamp01(Math.abs(data.MACD - data.MACD_Signal) / (Math.abs(data.MACD_Signal) || 1))
         : 0;
+    const trendStrength = clamp01(emaSlope * 0.6 + macdTrend * 0.4) * 25;
 
-    const trendStrength = ((trendNorm + macdTrend) / 2) * 20;
-
+    // ✅ Momentum Strength (RSI + Stoch)
     const rsiNorm = clamp01(Math.abs((data.RSI || 50) - 50) / 30);
     const stochNorm = clamp01(Math.abs((data.Stochastic || 50) - 50) / 50);
     const momentumStrength = ((rsiNorm + stochNorm) / 2) * 20;
 
-    const volNorm = clamp01((data.ATR || 0) / (THRESHOLDS.ATR_LOW || 1));
-    const volatilityStrength = volNorm * 20;
+    // ✅ Volatility Strength (ATR regime)
+    const atrNorm = clamp01((data.ATR || 0) / (THRESHOLDS.ATR_LOW * 1.2 || 1));
+    const volatilityStrength = atrNorm * 15;
 
-    const vol = data.volume || 0;
-    const avgVol = data.avgVolume || 1;
-    const volumeStrength = clamp01(vol / avgVol) * 20;
+    // ✅ Liquidity Strength (volume + OI)
+    const volNorm = clamp01((data.volume || 0) / (data.avgVolume || 1));
+    const oiNorm = clamp01((data.openInterest || 0) / (THRESHOLDS.OI_HIGH || 1));
+    const liquidityStrength = ((volNorm * 0.7) + (oiNorm * 0.3)) * 20;
 
-    const strongScenario = activeScenarios.some(s =>
-        ["Trend", "Momentum", "Breakout", "Reversion"].includes(s.category)
-    );
+    // ✅ Market Structure Score (по активних сценаріях)
+    const structureStrength = activeScenarios.some(s => ["Trend", "Breakout"].includes(s.category))
+        ? 10
+        : activeScenarios.some(s => ["Range", "Reversion"].includes(s.category))
+            ? 5
+            : 0;
 
-    let alignmentStrength = 0;
-    if (strongScenario) alignmentStrength += 10;
-    if (compositeActive) alignmentStrength += 10;
+    // ✅ Risk Conditions Score (funding, OI spikes, composite)
+    let riskStrength = 10;
+    if (Math.abs(data.funding || 0) > THRESHOLDS.FUNDING_SQUEEZE) riskStrength -= 5;
+    if ((data.openInterest || 0) > THRESHOLDS.OI_HIGH * 1.2) riskStrength -= 5;
+    if (compositeActive) riskStrength += 5;
 
-    const total = trendStrength + momentumStrength + volatilityStrength + volumeStrength + alignmentStrength;
+    const total = trendStrength + momentumStrength + volatilityStrength + liquidityStrength + structureStrength + riskStrength;
     const score = Math.round(clamp01(total / 100) * 100);
 
     let label = "Weak";
-    if (score >= 80) label = "Explosive";
-    else if (score >= 60) label = "Strong";
-    else if (score >= 40) label = "Normal";
+    if (score >= 85) label = "Explosive";
+    else if (score >= 65) label = "Strong";
+    else if (score >= 45) label = "Normal";
 
     return { score, label };
 }
@@ -92,7 +137,7 @@ export function analyzeBTC(data) {
         Math.abs(data.EMA8 - data.EMA21) > data.ATR * 0.15 ||
         compositeActive;
 
-    // ✅ Market Strength Score (оновлюється ТІЛЬКИ в індикатор)
+    // ✅ Market Strength Score
     const marketStrength = computeMarketStrength(
         data,
         THRESHOLDS,
@@ -137,56 +182,91 @@ export function analyzeBTC(data) {
         }
     }
 
-    // ✅ ENTRY SIGNALS TEXT
-    let entrySignalsText = "";
-    entrySignalsText += "━━━━━━━━━━━━━━━━━━━━\n";
-    entrySignalsText += "📥 ENTRY SIGNALS\n";
-    entrySignalsText += "━━━━━━━━━━━━━━━━━━━━\n";
+ // ✅ визначаємо тип ринкової узгодженості
+const alignmentType = getMarketAlignmentType(activeScenarios);
 
-    entrySignalsText += compositeActive
-        ? "✅ Composite Signal ACTIVE — ринок узгоджений\n"
-        : "⚠️ Composite Signal НЕ активний — ринок неузгоджений\n";
+// =======================
+// ✅ ENTRY SIGNALS TEXT (MARKET CONTEXT FIRST)
+// =======================
+let entrySignalsText = "";
 
-    entrySignalsText += strongMarket
-        ? "✅ Market conditions acceptable\n\n"
-        : "⚠️ Market weak — сигнали можуть бути менш надійні\n\n";
+// =======================
+// ✅ MARKET CONTEXT
+// =======================
+entrySignalsText += "";
 
-    if (activeEntrySignals.length === 0) {
-        entrySignalsText += "Немає активних сигналів входу.\n";
-    } else {
-        activeEntrySignals.forEach(sig => {
-            const star = sig.priority === 5 ? "⭐ " : "";
-            const typeColor = sig.type === "long" ? "🟢 LONG" : "🔴 SHORT";
 
-            const contextIcons = {
-                trend: "📈",
-                squeeze: "🧨",
-                range: "📊",
-                sr: "📉",
-                intraday: "⏱️",
-                reversion: "🔄",
-                volatility: "🌪️"
-            };
-            const ctxIcon = contextIcons[sig.context] || "•";
+switch (alignmentType) {
+    case "full":
+        entrySignalsText += "✅ FULL ALIGNMENT — market structure is unified (ринок узгоджений).\n";
+        entrySignalsText += "   → High directional clarity.\n";
+        break;
 
-            const boost = compositeActive ? " (+Composite Boost)" : "";
+    case "partial":
+        entrySignalsText += "🟡 PARTIAL ALIGNMENT — one structure dominates (домінує одна структура).\n";
+        entrySignalsText += "   → Moderate clarity.\n";
+        break;
 
-            entrySignalsText += `${star}${typeColor} | ${ctxIcon} ${sig.name} (priority ${sig.priority})${boost}\n`;
+    case "mixed":
+        entrySignalsText += "🟠 MIXED MARKET — multiple structures active (змішаний ринок).\n";
+        entrySignalsText += "   → Reduced predictability.\n";
+        break;
 
-            const setupPassed = sig.setup ? sig.setup(data).every(Boolean) : false;
-            const triggerPassed = sig.trigger ? sig.trigger(data).every(Boolean) : false;
-            const confirmPassed = sig.confirmation ? sig.confirmation(data).every(Boolean) : false;
+    case "conflicted":
+        entrySignalsText += "🔴 CONFLICTED MARKET — opposing structures (конфліктуючі сценарії).\n";
+        entrySignalsText += "   → High instability.\n";
+        break;
 
-            entrySignalsText += `  SETUP: ${setupPassed ? "✅" : "❌"}\n`;
-            entrySignalsText += `  TRIGGER: ${triggerPassed ? "✅" : "❌"}\n`;
-            entrySignalsText += `  CONFIRMATION: ${confirmPassed ? "✅" : "❌"}\n\n`;
-        });
-    }
+    case "none":
+        entrySignalsText += "⚪ NO ACTIVE STRUCTURE — no clear context (немає структури).\n";
+        entrySignalsText += "   → Low‑quality environment.\n";
+        break;
+}
 
-    return {
-        scenarios: scenarioText,
-        entrySignals: entrySignalsText
-    };
+entrySignalsText += "\n";
+// =======================
+// ✅ ENTRY SIGNALS (AFTER MARKET CONTEXT)
+// =======================
+entrySignalsText += "📥 ENTRY SIGNALS\n";
+
+
+if (activeEntrySignals.length === 0) {
+    entrySignalsText += "No valid entry conditions detected (умови для входу відсутні).\n";
+} else {
+    activeEntrySignals.forEach(sig => {
+        const star = sig.priority === 5 ? "⭐ " : "";
+        const typeColor = sig.type === "long" ? "🟢 LONG" : "🔴 SHORT";
+
+        const contextIcons = {
+            trend: "📈",
+            squeeze: "🧨",
+            range: "📊",
+            sr: "📉",
+            intraday: "⏱️",
+            reversion: "🔄",
+            volatility: "🌪️"
+        };
+        const ctxIcon = contextIcons[sig.context] || "•";
+
+        const boost = compositeActive ? " (+Composite Boost)" : "";
+
+        entrySignalsText += `${star}${typeColor} | ${ctxIcon} ${sig.name} (priority ${sig.priority})${boost}\n`;
+
+        const setupPassed = sig.setup ? sig.setup(data).every(Boolean) : false;
+        const triggerPassed = sig.trigger ? sig.trigger(data).every(Boolean) : false;
+        const confirmPassed = sig.confirmation ? sig.confirmation(data).every(Boolean) : false;
+
+        entrySignalsText += `  SETUP: ${setupPassed ? "✅" : "❌"}\n`;
+        entrySignalsText += `  TRIGGER: ${triggerPassed ? "✅" : "❌"}\n`;
+        entrySignalsText += `  CONFIRMATION: ${confirmPassed ? "✅" : "❌"}\n\n`;
+    });
+}
+
+// ✅ ALWAYS RETURN
+return {
+    scenarios: scenarioText,
+    entrySignals: entrySignalsText
+};
 }
 
 

@@ -40,7 +40,7 @@ async function trackPrice() {
 
   const change = ((price - lastPrice) / lastPrice) * 100;
 
-  // Повідомляємо тільки якщо зміна >= 0.01%
+  // Повідомляємо тільки якщо зміна >= 0.02%
   if (Math.abs(change) >= 0.01) {
     const sign = change > 0 ? "+" : "";
     appendMessage(`🔔 ${symbol}: ${sign}${change.toFixed(2)}%`);
@@ -106,8 +106,8 @@ function initProgressLine() {
   progressContainer = document.createElement("div");
   progressContainer.id = "progressLine";
   progressContainer.style.cssText = `
-    margin: 15px 0;
-    padding: 15px;
+    margin: 11px 0;
+    padding: 10px;
     background: rgba(30, 35, 45, 0.4);
     border-radius: 12px;
     border: 1px solid rgba(157, 189, 178, 0.2);
@@ -121,18 +121,18 @@ function initProgressLine() {
   const changeLabel = document.createElement("div");
   changeLabel.style.cssText =
     "font-size: 12px; color: #a8b5c0; font-family: 'Orbitron', monospace;";
-  changeLabel.textContent = "Зміна: ";
+  changeLabel.textContent = "Change: ";
 
   changeValueSpan = document.createElement("span");
   changeValueSpan.style.cssText =
-    "font-weight: bold; font-size: 14px; transition: color 0.3s ease;";
+    "font-weight: bold; font-size: 14px; transition: color 1.3s ease;";
   changeValueSpan.textContent = "+0.0000%";
 
   changeLabel.appendChild(changeValueSpan);
 
   marketStateDiv = document.createElement("div");
   marketStateDiv.style.cssText =
-    "font-size: 11px; font-weight: bold; font-family: 'Orbitron', monospace; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; transition: all 0.3s ease;";
+    "font-size: 11px; font-weight: bold; font-family: 'Orbitron', monospace; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; transition: all 1.3s ease;";
   marketStateDiv.textContent = "Consolidation";
 
   topRow.appendChild(changeLabel);
@@ -163,7 +163,7 @@ function initProgressLine() {
     box-shadow: 0 0 10px rgb(165, 185, 175), 0 0 18px rgba(165, 185, 175, 0.5);
     border-radius: 3px;
     border: 2px solid rgba(255, 255, 255, 0.6);
-    transition: all 0.6s ease;
+    transition: all 1.6s ease;
   `;
 
   progressBar.appendChild(indicator);
@@ -194,8 +194,10 @@ function initProgressLine() {
   progressContainer.appendChild(progressBar);
   progressContainer.appendChild(bottomRow);
 
-  const messagesContainer = document.getElementById("priceMessages");
-  messagesContainer.parentElement.insertBefore(progressContainer, messagesContainer);
+const messagesContainer = document.getElementById("priceMessages");
+const parent = messagesContainer ? messagesContainer.parentElement : document.querySelector(".container") || document.body;
+
+parent.insertBefore(progressContainer, messagesContainer || parent.firstChild);
 
   isInitialized = true;
 }
@@ -303,3 +305,9 @@ function addPriceMessage(price, prevPrice) {
 
   container.prepend(item); // нові зверху
 }
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#progressLine")) {
+    progressContainer.classList.toggle("compact");
+  }
+});
+
