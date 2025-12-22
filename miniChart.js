@@ -1,192 +1,226 @@
 // ===============================
 //   miniChart.js — Vertical Fib Bar (PRO VERSION)
 // ===============================
-
+let fibMinimized = false;
+let fibColorShift = 0;
+let fibAnimationFrame = null;
 // ===============================
 // 1. LOAD FIB FROM INPUT
 // ===============================
 function loadFibChartFromInput() {
-    const input = document.getElementById("symbol");
-    if (!input) return;
+  const input = document.getElementById("symbol");
+  if (!input) return;
 
-    let symbol = input.value.trim().toUpperCase();
-    if (!symbol) return;
+  let symbol = input.value.trim().toUpperCase();
+  if (!symbol) return;
 
-    loadFibChart(symbol);
+  loadFibChart(symbol);
 }
 
 // ===============================
 // 2. LOAD DATA FROM BINANCE (4H)
 // ===============================
 async function loadFibChart(symbol) {
-    symbol = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  symbol = symbol
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 
-    if (!symbol.endsWith("USDT")) {
-        symbol = symbol + "USDT";
-    }
+  if (!symbol.endsWith("USDT")) {
+    symbol = symbol + "USDT";
+  }
 
-    try {
-        const resp = await fetch(
-            `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=4h&limit=300`
-        );
+  try {
+    const resp = await fetch(
+      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=4h&limit=300`
+    );
 
-        const data = await resp.json();
-        if (!Array.isArray(data)) return;
+    const data = await resp.json();
+    if (!Array.isArray(data)) return;
 
-        // ✅ HIGH / LOW / CLOSE
-        const highs = data.map(c => parseFloat(c[2]));
-        const lows  = data.map(c => parseFloat(c[3]));
-        const closes = data.map(c => parseFloat(c[4]));
+    // ✅ HIGH / LOW / CLOSE
+    const highs = data.map((c) => parseFloat(c[2]));
+    const lows = data.map((c) => parseFloat(c[3]));
+    const closes = data.map((c) => parseFloat(c[4]));
 
-        drawFibChart(highs, lows, closes);
-    } catch (e) {
-        console.error("Помилка Fib:", e);
-    }
+    drawFibChart(highs, lows, closes);
+  } catch (e) {
+    console.error("Помилка Fib:", e);
+  }
 }
 
 // ===============================
 // 3. FIND LAST IMPULSE (SWING HIGH → SWING LOW)
 // ===============================
 function findLastImpulse(highs, lows) {
-    const recentHighs = highs.slice(-80);
-    const recentLows  = lows.slice(-80);
+  const recentHighs = highs.slice(-80);
+  const recentLows = lows.slice(-80);
 
-    const swingHigh = Math.max(...recentHighs);
-    const swingLow  = Math.min(...recentLows);
+  const swingHigh = Math.max(...recentHighs);
+  const swingLow = Math.min(...recentLows);
 
-    return { swingHigh, swingLow };
+  return { swingHigh, swingLow };
 }
 
 /// ===============================
 // 4. DRAW VERTICAL FIB BAR
 // ===============================
+// ===============================
+// 4. DRAW VERTICAL FIB BAR
+// ===============================
 function drawFibChart(highs, lows, closes) {
-    const canvas = document.getElementById("fibChart");
-    const ctx = canvas.getContext("2d");
+  const canvas = document.getElementById("fibChart");
+  const ctx = canvas.getContext("2d");
 
-    // Retina
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Retina
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const width = rect.width;
-    const height = rect.height;
+  const width = rect.width;
+  const height = rect.height;
 
-    // ============================
-    // 1) LAST IMPULSE
-    // ============================
-    const { swingHigh, swingLow } = findLastImpulse(highs, lows);
-    const last = closes[closes.length - 1];
+  // ============================
+  // 1) LAST IMPULSE
+  // ============================
+  const { swingHigh, swingLow } = findLastImpulse(highs, lows);
+  const last = closes[closes.length - 1];
+  const range = swingHigh - swingLow;
+  if (range === 0) return;
 
-    const range = swingHigh - swingLow;
-    if (range === 0) return;
+  // ============================
+  // 2) FIB LEVELS
+  // ============================
+  const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 1];
+  const fib = fibLevels.map(lvl => ({
+    lvl,
+    val: swingLow + range * lvl
+  }));
 
-    // ============================
-    // 2) FIB LEVELS
-    // ============================
-    const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 1];
+  const scaleX = p => ((p - swingLow) / range) * width;
 
-    const fib = fibLevels.map(lvl => ({
-        lvl,
-        val: swingLow + range * lvl
-    }));
-
-    const scaleX = p => ((p - swingLow) / range) * width;
-
-    // ============================
-    // 3) BACKGROUND
-    // ============================
-    ctx.fillStyle = "#0b0e15";
-    ctx.fillRect(0, 0, width, height);
-
-    // ============================
-    // 4) GRAPH TITLE
-    // ============================
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.font = "12px 'SF Pro Text', sans-serif";
-    ctx.fillStyle = "#c6d5e3ff";
-ctx.font = "10px 'Orbitron', monospace";
-ctx.fillText("FIBONACCI IMPULSE", 10, 12);
-
-    // ============================
-    // 5) ACTIVE ZONE
-    // ============================
-    let activeZone = null;
-
-    for (let i = 0; i < fib.length - 1; i++) {
-        if (last >= fib[i].val && last <= fib[i + 1].val) {
-            activeZone = { left: fib[i], right: fib[i + 1] };
-            break;
-        }
+  // ============================
+  // 3) FIND ACTIVE ZONE
+  // ============================
+  let activeZone = null;
+  for (let i = 0; i < fib.length - 1; i++) {
+    if (last >= fib[i].val && last <= fib[i + 1].val) {
+      activeZone = { left: fib[i], right: fib[i + 1] };
+      break;
     }
+  }
 
-    if (activeZone) {
-        const x1 = scaleX(activeZone.left.val);
-        const x2 = scaleX(activeZone.right.val);
-        ctx.fillStyle = "rgba(0, 150, 255, 0.12)";
-        ctx.fillRect(x1, 20, x2 - x1, height - 20);
-    }
+  // ============================
+// MINIMIZED MODE (STATIC TEXT)
+// ============================
+if (fibMinimized) {
+    if (!activeZone) return;
 
-    // ============================
-    // 6) FIB LINES
-    // ============================
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
-    ctx.lineWidth = 1;
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.font = "10px 'SF Pro Text', sans-serif";
+    const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
 
-    fib.forEach(f => {
-        const x = scaleX(f.val);
+// ✅ збільшуємо внутрішню висоту, щоб текст не сплюснувся
+canvas.height = 70 * dpr;
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        ctx.beginPath();
-        ctx.moveTo(x, 20);
-        ctx.lineTo(x, height);
-        ctx.stroke();
+ctx.clearRect(0, 0, width, 70);
 
-        ctx.fillText((f.lvl * 100).toFixed(1) + "%", x + 2, 32);
-    });
+ctx.font = "bold 26px 'Orbitron', monospace";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillStyle = "#ffffff";
 
-    // ============================
-    // 7) PRICE MARKER
-    // ============================
-    const lastX = scaleX(last);
+ctx.fillText(txt, width / 2, 40); // центр по новій висоті
 
+
+    return; // ✅ вихід — більше нічого не малюємо
+}
+
+
+  // ============================
+  // ✅ FULL MODE BELOW
+  // ============================
+
+  // BACKGROUND
+  ctx.fillStyle = "rgba(30, 35, 45, 0.4)";
+  ctx.fillRect(0, 0, width, height);
+
+  // TITLE
+  ctx.fillStyle = "#c6d5e3ff";
+  ctx.font = "12px 'Orbitron', monospace";
+  ctx.fillText("Fibonacci Impulse", 10, 12);
+
+  // ACTIVE ZONE
+  if (activeZone) {
+    const x1 = scaleX(activeZone.left.val);
+    const x2 = scaleX(activeZone.right.val);
+    ctx.fillStyle = "rgba(0, 150, 255, 0.12)";
+    ctx.fillRect(x1, 20, x2 - x1, height - 20);
+  }
+
+  // FIB LINES
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = "10px 'SF Pro Text', sans-serif";
+
+  fib.forEach(f => {
+    const x = scaleX(f.val);
     ctx.beginPath();
-    ctx.arc(lastX, height / 2 + 10, 4, 0, Math.PI * 2);
-    ctx.fillStyle = "#00aaff";
-    ctx.fill();
+    ctx.moveTo(x, 20);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+    ctx.fillText((f.lvl * 100).toFixed(1) + "%", x + 2, 32);
+  });
 
-    // ============================
-    // 8) ACTIVE ZONE TEXT
-    // ============================
-    if (activeZone) {
-        const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
-        ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.font = "11px 'SF Pro Text', sans-serif";
-        ctx.fillText(txt, width - 90, height - 6);
-    }
+  // PRICE MARKER
+  const lastX = scaleX(last);
+  ctx.beginPath();
+  ctx.arc(lastX, height / 2 + 10, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#00aaff";
+  ctx.fill();
 
-    // ============================
-    // 9) IMPULSE PRICES (SWING LOW / HIGH)
-    // ============================
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = "10px 'SF Pro Text', sans-serif";
+  // ACTIVE ZONE TEXT
+  if (activeZone) {
+    const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.font = "11px 'SF Pro Text', sans-serif";
+    ctx.fillText(txt, width - 90, height - 6);
+  }
 
-    ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
-    ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
+  // SWING PRICES
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "10px 'SF Pro Text', sans-serif";
+  ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
+  ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
 }
 
 // ===============================
 // 5. AUTO REFRESH EVERY 5 MINUTES
 // ===============================
 setInterval(() => {
-    loadFibChartFromInput();
-}, 5 * 60 * 1000);
+  loadFibChartFromInput();
+}, 10 * 60 * 1000);
 
 // ===============================
 // EXPORT
 // ===============================
 window.loadFibChart = loadFibChart;
 window.loadFibChartFromInput = loadFibChartFromInput;
+
+
+
+document.getElementById("fibChart").addEventListener("click", () => {
+    fibMinimized = !fibMinimized;
+
+    const canvas = document.getElementById("fibChart");
+
+    if (fibMinimized) {
+        canvas.classList.add("minimized");
+    } else {
+        canvas.classList.remove("minimized");
+    }
+
+    loadFibChartFromInput();
+});

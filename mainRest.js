@@ -343,11 +343,6 @@ box.addEventListener("click", (e) => {
   }
 });
 
-document.addEventListener("click", (e) => {
-  if (e.target !== input && e.target.parentElement !== box) {
-    box.style.display = "none";
-  }
-});
 
 // ✅ Fib оновлюється при Enter або blur
 input.addEventListener("change", updateFibFromInput);

@@ -48,7 +48,7 @@ h3:hover {
 /* Обгортка для canvas + input */
 .wrapCanvas {
   background: #0d1117;
-  padding: 3px;
+  padding: 10px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
@@ -61,7 +61,7 @@ h3:hover {
 .wrapCanvas:hover {
   background: #161b22;
   border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); */
 }
 
 .wrapCanvas:active {
@@ -80,11 +80,10 @@ input,
   background: #050810;
   display: block;
 }
-#fibChart {
-  border-radius: 6px;
-  background: #050810;
-  display: block;
+#fibChart.minimized {
+    height: 30px !important;
 }
+
 
 /* Label + input */
 .symbolLabel {
@@ -480,7 +479,11 @@ footer div {
     border-radius: 6px;
     width: 100%; /* ✅ Pixel fix */
   }
-
+  #fibChart {
+    height: 70px;
+    border-radius: 6px;
+    width: 100%; /* ✅ Pixel fix */
+  }
   /* ✅ Inputs */
   .symbolLabel {
     font-size: 11px;

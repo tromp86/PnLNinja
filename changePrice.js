@@ -41,7 +41,7 @@ async function trackPrice() {
   const change = ((price - lastPrice) / lastPrice) * 100;
 
   // Повідомляємо тільки якщо зміна >= 0.02%
-  if (Math.abs(change) >= 0.01) {
+  if (Math.abs(change) >= 0.02) {
     const sign = change > 0 ? "+" : "";
     appendMessage(`🔔 ${symbol}: ${sign}${change.toFixed(2)}%`);
     lastPrice = price; // оновлюємо останню відому ціну
