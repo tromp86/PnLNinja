@@ -175,7 +175,7 @@ function initProgressLine() {
 
   const leftLabel = document.createElement("span");
   leftLabel.style.color = "#c98899";
-  leftLabel.textContent = "-0.05% 🔴";
+  leftLabel.textContent = "-0.1% 🔴";
 
   const centerLabel = document.createElement("span");
   centerLabel.style.color = "#88c9a1";
@@ -183,7 +183,7 @@ function initProgressLine() {
 
   const rightLabel = document.createElement("span");
   rightLabel.style.color = "#c98899";
-  rightLabel.textContent = "+0.05% 🔴";
+  rightLabel.textContent = "+0.1% 🔴";
 
   bottomRow.appendChild(leftLabel);
   bottomRow.appendChild(centerLabel);

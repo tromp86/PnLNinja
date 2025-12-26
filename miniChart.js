@@ -4,6 +4,7 @@
 let fibMinimized = false;
 let fibColorShift = 0;
 let fibAnimationFrame = null;
+
 // ===============================
 // 1. LOAD FIB FROM INPUT
 // ===============================
@@ -62,9 +63,6 @@ function findLastImpulse(highs, lows) {
   return { swingHigh, swingLow };
 }
 
-/// ===============================
-// 4. DRAW VERTICAL FIB BAR
-// ===============================
 // ===============================
 // 4. DRAW VERTICAL FIB BAR
 // ===============================
@@ -112,7 +110,7 @@ function drawFibChart(highs, lows, closes) {
     }
   }
 
-  // ============================
+/// ============================
 // MINIMIZED MODE (STATIC TEXT)
 // ============================
 if (fibMinimized) {
@@ -120,80 +118,84 @@ if (fibMinimized) {
 
     const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
 
-// ✅ збільшуємо внутрішню висоту, щоб текст не сплюснувся
-canvas.height = 70 * dpr;
-ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Внутрішній розмір canvas = CSS-висота (30px) × dpr
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-ctx.clearRect(0, 0, width, 70);
+    ctx.clearRect(0, 0, width, height);
 
-ctx.font = "bold 26px 'Orbitron', monospace";
-ctx.textAlign = "center";
-ctx.textBaseline = "middle";
-ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 20px 'Orbitron', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
 
-ctx.fillText(txt, width / 2, 40); // центр по новій висоті
+    // Витягування по вертикалі
+    ctx.save();
+    ctx.scale(1, 1.6);
+    ctx.fillText(txt, width / 2, (height / 2) / 1.6);
+    ctx.restore();
 
-
-    return; // ✅ вихід — більше нічого не малюємо
+    return;
 }
 
 
-  // ============================
-  // ✅ FULL MODE BELOW
-  // ============================
+// ============================
+// FULL MODE
+// ============================
 
-  // BACKGROUND
-  ctx.fillStyle = "rgba(30, 35, 45, 0.4)";
-  ctx.fillRect(0, 0, width, height);
+// BACKGROUND
+ctx.fillStyle = "rgba(30, 35, 45, 0.4)";
+ctx.fillRect(0, 0, width, height);
 
-  // TITLE
-  ctx.fillStyle = "#c6d5e3ff";
-  ctx.font = "12px 'Orbitron', monospace";
-  ctx.fillText("Fibonacci Impulse", 10, 12);
+// TITLE
+ctx.fillStyle = "#c6d5e3ff";
+ctx.font = "12px 'Orbitron', monospace";
+ctx.fillText("Fibonacci Impulse", 10, 12);
 
-  // ACTIVE ZONE
-  if (activeZone) {
+// ACTIVE ZONE
+if (activeZone) {
     const x1 = scaleX(activeZone.left.val);
     const x2 = scaleX(activeZone.right.val);
     ctx.fillStyle = "rgba(0, 150, 255, 0.12)";
     ctx.fillRect(x1, 20, x2 - x1, height - 20);
-  }
+}
 
-  // FIB LINES
-  ctx.strokeStyle = "rgba(255,255,255,0.25)";
-  ctx.lineWidth = 1;
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.font = "10px 'SF Pro Text', sans-serif";
+// FIB LINES
+ctx.strokeStyle = "rgba(255,255,255,0.25)";
+ctx.lineWidth = 1;
+ctx.fillStyle = "rgba(255,255,255,0.7)";
+ctx.font = "10px 'SF Pro Text', sans-serif";
 
-  fib.forEach(f => {
+fib.forEach(f => {
     const x = scaleX(f.val);
     ctx.beginPath();
     ctx.moveTo(x, 20);
     ctx.lineTo(x, height);
     ctx.stroke();
     ctx.fillText((f.lvl * 100).toFixed(1) + "%", x + 2, 32);
-  });
+});
 
-  // PRICE MARKER
-  const lastX = scaleX(last);
-  ctx.beginPath();
-  ctx.arc(lastX, height / 2 + 10, 4, 0, Math.PI * 2);
-  ctx.fillStyle = "#00aaff";
-  ctx.fill();
+// PRICE MARKER
+const lastX = scaleX(last);
+ctx.beginPath();
+ctx.arc(lastX, height / 2 + 10, 4, 0, Math.PI * 2);
+ctx.fillStyle = "#00aaff";
+ctx.fill();
 
-  // ACTIVE ZONE TEXT
-  if (activeZone) {
+// ACTIVE ZONE TEXT
+if (activeZone) {
     const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.font = "11px 'SF Pro Text', sans-serif";
     ctx.fillText(txt, width - 90, height - 6);
-  }
+}
 
-  // SWING PRICES
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.font = "10px 'SF Pro Text', sans-serif";
-  ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
-  ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
+// SWING PRICES
+ctx.fillStyle = "rgba(255,255,255,0.55)";
+ctx.font = "10px 'SF Pro Text', sans-serif";
+ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
+ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
 }
 
 // ===============================

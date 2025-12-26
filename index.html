@@ -14,7 +14,97 @@
     <div class="container">
       
 <div class="countdown-wrapper">
-  <h3>Crypto Analyzer by Tromp86</h3>
+  <!-- <h3>Crypto Analyzer by Tromp86</h3> -->
+
+<div class="logo-header">
+<svg viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
+
+<defs>
+  <!-- Gradients -->
+  <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#0f4c5c"/>
+    <stop offset="100%" stop-color="#071821"/>
+  </linearGradient>
+
+  <linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0%" stop-color="#1ee6c1"/>
+    <stop offset="100%" stop-color="#9aff00"/>
+  </linearGradient>
+
+  <linearGradient id="scanGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="transparent"/>
+    <stop offset="50%" stop-color="#9aff00" stop-opacity="0.4"/>
+    <stop offset="100%" stop-color="transparent"/>
+  </linearGradient>
+
+  <!-- Glow -->
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+</defs>
+
+<!-- SHIELD -->
+<g class="shield-float">
+  <path class="shield-back"
+    d="M90 10 L150 40 V100
+       C150 125 110 145 90 150
+       C70 145 30 125 30 100
+       V40 Z"/>
+
+  <path class="shield-inner"
+    d="M90 20 L140 45 V95
+       C140 115 110 130 90 135
+       C70 130 40 115 40 95
+       V45 Z"/>
+
+  <!-- Scan line -->
+  <rect x="30" y="40" width="120" height="20" class="scan"/>
+</g>
+
+<!-- CIRCUITS -->
+<g class="circuits">
+  <circle cx="50" cy="35" r="3"/>
+  <circle cx="130" cy="35" r="3"/>
+  <line x1="50" y1="35" x2="50" y2="20"/>
+  <line x1="130" y1="35" x2="130" y2="20"/>
+</g>
+
+<!-- MAGNIFIER -->
+<g class="magnifier">
+  <circle cx="90" cy="75" r="30"/>
+  <circle cx="90" cy="75" r="24" class="glass-inner"/>
+  <rect x="112" y="100" width="32" height="10" rx="5"
+        transform="rotate(35 112 100)" class="handle"/>
+</g>
+
+<!-- BARS -->
+<g class="bars">
+  <rect x="74" y="90" width="8" height="22"/>
+  <rect x="88" y="74" width="8" height="38"/>
+  <rect x="102" y="54" width="8" height="58"/>
+</g>
+
+<!-- ARROW -->
+<g class="arrow-group">
+  <path d="M74 110 L110 60" class="arrow"/>
+  <polygon points="110,60 100,64 104,72"/>
+</g>
+
+<!-- TEXT -->
+<text x="190" y="105" class="logo-text">
+  ANALYZER <tspan class="accent">TROMP86</tspan>
+</text>
+
+</svg>
+</div>
+
+
+
+
   <div id="countdown">...</div>
 <a href="./PnLNinja/indexPnl.html" class="boton-elegante">
     PnLNinja
@@ -47,12 +137,15 @@
      <div id="priceMessages"></div> 
 
      <div class="wrapCanvas">
-<canvas id="fibChart" width="800" height="70"
+<!-- <canvas id="fibChart" width="800" height="70"
   style="width:100%;margin-top:2px;">
-</canvas>
+</canvas> -->
+
+<canvas id="fibChart" width="800" height="70"></canvas>
+<!-- <canvas id="fibChart"></canvas> -->
 </div>
  <footer>
-    <div>v.0161 Fib</div>
+    <div>v.0165 Logo</div>
     <span>designed by tromp86</span>
 </footer>
     </div>
