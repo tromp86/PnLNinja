@@ -44,7 +44,7 @@ async function loadFibChart(symbol) {
     const lows = data.map((c) => parseFloat(c[3]));
     const closes = data.map((c) => parseFloat(c[4]));
 
-    drawFibChart(highs, lows, closes);
+    drawFibChart(highs, lows, closes, data);
   } catch (e) {
     console.error("Помилка Fib:", e);
   }
@@ -66,7 +66,7 @@ function findLastImpulse(highs, lows) {
 // ===============================
 // 4. DRAW VERTICAL FIB BAR
 // ===============================
-function drawFibChart(highs, lows, closes) {
+function drawFibChart(highs, lows, closes, data) {
   const canvas = document.getElementById("fibChart");
   const ctx = canvas.getContext("2d");
 
@@ -80,35 +80,76 @@ function drawFibChart(highs, lows, closes) {
   const width = rect.width;
   const height = rect.height;
 
-  // ============================
-  // 1) LAST IMPULSE
-  // ============================
-  const { swingHigh, swingLow } = findLastImpulse(highs, lows);
-  const last = closes[closes.length - 1];
-  const range = swingHigh - swingLow;
-  if (range === 0) return;
+ // ============================
+// 1) LAST IMPULSE (optimized)
+// ============================
+let swingHigh = -Infinity;
+let swingLow = Infinity;
+let indexHigh = -1;
+let indexLow = -1;
 
-  // ============================
-  // 2) FIB LEVELS
-  // ============================
-  const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 1];
-  const fib = fibLevels.map(lvl => ({
+for (let i = highs.length - 80; i < highs.length; i++) {
+    if (highs[i] > swingHigh) {
+        swingHigh = highs[i];
+        indexHigh = i;
+    }
+    if (lows[i] < swingLow) {
+        swingLow = lows[i];
+        indexLow = i;
+    }
+}
+
+const last = closes[closes.length - 1];
+const range = swingHigh - swingLow;
+if (range === 0) return;
+
+// ============================
+// 2) CORRECTION DEPTH
+// ============================
+const correctionDepth = (last - swingLow) / range;
+
+// ============================
+// 3) IMPULSE STRENGTH
+// ============================
+const impulseStrength = ((swingHigh - swingLow) / swingHigh) * 100;
+
+// ============================
+// 4) VOLUME FILTER
+// ============================
+const volumes = data.map(c => parseFloat(c[5]));
+const avgVolume = volumes.slice(-80).reduce((a,b)=>a+b,0) / 80;
+
+let impulseVolume = 0;
+let bars = 0;
+
+for (let i = Math.min(indexLow, indexHigh); i <= Math.max(indexLow, indexHigh); i++) {
+    impulseVolume += volumes[i];
+    bars++;
+}
+
+const volumeStrength = impulseVolume / (avgVolume * bars);
+
+// ============================
+// 6) FIB LEVELS
+// ============================
+const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 1];
+const fib = fibLevels.map(lvl => ({
     lvl,
     val: swingLow + range * lvl
-  }));
+}));
 
-  const scaleX = p => ((p - swingLow) / range) * width;
+const scaleX = p => ((p - swingLow) / range) * width;
 
-  // ============================
-  // 3) FIND ACTIVE ZONE
-  // ============================
-  let activeZone = null;
-  for (let i = 0; i < fib.length - 1; i++) {
+// ============================
+// 7) FIND ACTIVE ZONE
+// ============================
+let activeZone = null;
+for (let i = 0; i < fib.length - 1; i++) {
     if (last >= fib[i].val && last <= fib[i + 1].val) {
-      activeZone = { left: fib[i], right: fib[i + 1] };
-      break;
+        activeZone = { left: fib[i], right: fib[i + 1] };
+        break;
     }
-  }
+}
 
 /// ============================
 // MINIMIZED MODE (STATIC TEXT)
@@ -125,7 +166,7 @@ if (fibMinimized) {
 
     ctx.clearRect(0, 0, width, height);
 
-    ctx.font = "bold 20px 'Orbitron', monospace";
+    ctx.font = "bold 18px 'Orbitron', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#ffffff";
@@ -150,7 +191,7 @@ ctx.fillRect(0, 0, width, height);
 
 // TITLE
 ctx.fillStyle = "#c6d5e3ff";
-ctx.font = "12px 'Orbitron', monospace";
+ctx.font = "13px 'Orbitron', monospace";
 ctx.fillText("Fibonacci Impulse", 10, 12);
 
 // ACTIVE ZONE
@@ -165,7 +206,7 @@ if (activeZone) {
 ctx.strokeStyle = "rgba(255,255,255,0.25)";
 ctx.lineWidth = 1;
 ctx.fillStyle = "rgba(255,255,255,0.7)";
-ctx.font = "10px 'SF Pro Text', sans-serif";
+ctx.font = "11px 'SF Pro Text', sans-serif";
 
 fib.forEach(f => {
     const x = scaleX(f.val);
@@ -179,7 +220,7 @@ fib.forEach(f => {
 // PRICE MARKER
 const lastX = scaleX(last);
 ctx.beginPath();
-ctx.arc(lastX, height / 2 + 10, 4, 0, Math.PI * 2);
+ctx.arc(lastX, height / 2 + 10, 5, 0, Math.PI * 2);
 ctx.fillStyle = "#00aaff";
 ctx.fill();
 
@@ -193,9 +234,68 @@ if (activeZone) {
 
 // SWING PRICES
 ctx.fillStyle = "rgba(255,255,255,0.55)";
-ctx.font = "10px 'SF Pro Text', sans-serif";
+ctx.font = "12px 'SF Pro Text', sans-serif";
 ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
 ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
+
+/// ============================
+// TRADINGVIEW PANEL (right block)
+// ============================
+
+// Панельні параметри
+const panelWidth = 250;
+const panelHeight = 110;
+const panelX = width - panelWidth - 10;
+const panelY = 5;
+const panelRadius = 8;
+
+// Фон панелі
+ctx.fillStyle = "rgba(20, 24, 33, 0.65)";
+ctx.beginPath();
+ctx.moveTo(panelX + panelRadius, panelY);
+ctx.lineTo(panelX + panelWidth - panelRadius, panelY);
+ctx.quadraticCurveTo(panelX + panelWidth, panelY, panelX + panelWidth, panelY + panelRadius);
+ctx.lineTo(panelX + panelWidth, panelY + panelHeight - panelRadius);
+ctx.quadraticCurveTo(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth - panelRadius, panelY + panelHeight);
+ctx.lineTo(panelX + panelRadius, panelY + panelHeight);
+ctx.quadraticCurveTo(panelX, panelY + panelHeight, panelX, panelY + panelHeight - panelRadius);
+ctx.lineTo(panelX, panelY + panelRadius);
+ctx.quadraticCurveTo(panelX, panelY, panelX + panelRadius, panelY);
+ctx.fill();
+
+// Внутрішній падінг
+const padX = panelX + 12;
+let py = panelY + 18;
+
+function strengthColor(v) {
+    if (v >= 1.5) return "#00eaffff";      // very strong (неон зелений)
+    if (v >= 1.2) return "#4cff8f";      // strong (зелений)
+    if (v >= 0.9) return "#ffe066";      // medium (жовтий)
+    if (v >= 0.7) return "#ff9f40";      // weak (помаранчевий)
+    return "#ff6b6b";                    // very weak (червоний)
+}
+
+// Заголовок
+ctx.fillStyle = "rgba(255,255,255,0.85)";
+ctx.font = "12px'Orbitron', monospace";
+ctx.fillText("Market Metrics", padX, py);
+py += 20;
+
+// Correction
+ctx.fillStyle = strengthColor(correctionDepth);
+ctx.font = "12px 'SF Pro Text', sans-serif";
+ctx.fillText("Correction: " + (correctionDepth * 100).toFixed(1) + "%", padX, py);
+py += 18;
+
+// Impulse
+ctx.fillStyle = strengthColor(impulseStrength / 100);
+ctx.fillText("Impulse: " + impulseStrength.toFixed(1) + "%", padX, py);
+py += 18;
+
+// Volume
+ctx.fillStyle = strengthColor(volumeStrength);
+ctx.fillText("Volume: " + volumeStrength.toFixed(2) + "x", padX, py);
+py += 18;
 }
 
 // ===============================

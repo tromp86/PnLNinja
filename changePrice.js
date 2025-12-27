@@ -305,6 +305,21 @@ function addPriceMessage(price, prevPrice) {
 
   container.prepend(item); // нові зверху
 }
+// document.addEventListener("click", (e) => {
+//   if (e.target.closest("#progressLine")) {
+//     progressContainer.classList.toggle("compact");
+//   }
+// });
+
+// Додай клас compact на старті
+
+// Десь на початку коду, після завантаження сторінки
+window.addEventListener('DOMContentLoaded', () => {
+  const progressContainer = document.getElementById("progressLine");
+  progressContainer.classList.add("compact");
+});
+
+// Твій існуючий код
 document.addEventListener("click", (e) => {
   if (e.target.closest("#progressLine")) {
     progressContainer.classList.toggle("compact");
