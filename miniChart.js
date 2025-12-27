@@ -242,11 +242,14 @@ ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
 // TRADINGVIEW PANEL (right block)
 // ============================
 
+// Адаптивні параметри
+const isMobile = width < 500;
+
 // Панельні параметри
-const panelWidth = 250;
-const panelHeight = 110;
-const panelX = width - panelWidth - 10;
-const panelY = 5;
+const panelWidth = isMobile ? 100 : 200;
+const panelHeight = isMobile ? 70 : 100;
+const panelX = isMobile ? width - panelWidth - 0 : width - panelWidth - 8;
+const panelY = 8;
 const panelRadius = 8;
 
 // Фон панелі
@@ -265,7 +268,7 @@ ctx.fill();
 
 // Внутрішній падінг
 const padX = panelX + 12;
-let py = panelY + 18;
+let py = panelY + (isMobile ? 13 : 18);
 
 function strengthColor(v) {
     if (v >= 1.5) return "#00eaffff";      // very strong (неон зелений)
@@ -277,25 +280,25 @@ function strengthColor(v) {
 
 // Заголовок
 ctx.fillStyle = "rgba(255,255,255,0.85)";
-ctx.font = "12px'Orbitron', monospace";
+ctx.font = isMobile ? "10px 'Orbitron', monospace" : "12px 'Orbitron', monospace";
 ctx.fillText("Market Metrics", padX, py);
-py += 20;
+py += isMobile ? 18 : 20;
 
 // Correction
 ctx.fillStyle = strengthColor(correctionDepth);
-ctx.font = "12px 'SF Pro Text', sans-serif";
+ctx.font = isMobile ? "10px 'SF Pro Text', sans-serif" : "12px 'SF Pro Text', sans-serif";
 ctx.fillText("Correction: " + (correctionDepth * 100).toFixed(1) + "%", padX, py);
-py += 18;
+py += isMobile ? 16 : 18;
 
 // Impulse
 ctx.fillStyle = strengthColor(impulseStrength / 100);
 ctx.fillText("Impulse: " + impulseStrength.toFixed(1) + "%", padX, py);
-py += 18;
+py += isMobile ? 16 : 18;
 
 // Volume
 ctx.fillStyle = strengthColor(volumeStrength);
 ctx.fillText("Volume: " + volumeStrength.toFixed(2) + "x", padX, py);
-py += 18;
+py += isMobile ? 16 : 18;
 }
 
 // ===============================

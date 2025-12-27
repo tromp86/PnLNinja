@@ -470,7 +470,6 @@ footer div {
   height: 100%;
 }
 
-/* Shield */
 .shield-back {
   fill: url(#shieldGrad);
   stroke: #5e5e5e;
@@ -487,8 +486,26 @@ footer div {
   stroke-width: 1.5;
   filter: url(#glow);
   opacity: 0.8;
+  animation: shieldPulse 10s ease-in-out infinite;
 }
-/* Scan */
+
+@keyframes shieldPulse {
+  0%, 90%, 100% {
+    stroke: #1484b8;
+    stroke-width: 1.5;
+    filter: url(#glow) drop-shadow(0 0 2px #1484b8);
+  }
+  75% {
+    stroke: #ff1493;
+    stroke-width: 5;
+    filter: url(#glow) drop-shadow(0 0 15px #ff2a16) drop-shadow(0 2 25px #ff1493);
+    opacity: 1;
+  }
+  85% {
+    opacity: 0;
+  }
+}
+
 .scan {
   fill: url(#scanGrad);
   animation: scan 2.5s infinite linear;
@@ -499,7 +516,6 @@ footer div {
   animation: handlePulse 3s infinite ease-in-out;
 }
 
-/* Text */
 .logo-text {
   fill: #ffffff;
   font-size: 50px;
@@ -567,14 +583,14 @@ footer div {
   }
 
   #miniChart {
-    height: 70px;
+    height: 80px;
     border-radius: 6px;
-    width: 100%; /* ✅ Pixel fix */
+    width: 100%; 
   }
   #fibChart {
-    height: 70px;
+    height: 120px;
     border-radius: 6px;
-    width: 100%; /* ✅ Pixel fix */
+    width: 100%; 
   }
   /* ✅ Inputs */
   .symbolLabel {
