@@ -271,11 +271,11 @@ const padX = panelX + 12;
 let py = panelY + (isMobile ? 13 : 18);
 
 function strengthColor(v) {
-    if (v >= 1.5) return "#00eaffff";      // very strong (неон зелений)
-    if (v >= 1.2) return "#4cff8f";      // strong (зелений)
-    if (v >= 0.9) return "#ffe066";      // medium (жовтий)
-    if (v >= 0.7) return "#ff9f40";      // weak (помаранчевий)
-    return "#ff6b6b";                    // very weak (червоний)
+    if (v >= 1.5) return "#ff6b6b";      // Дуже сильна (Червоний)
+    if (v >= 1.2) return "#ff9f40";      // Сильна (Помаранчевий)
+    if (v >= 0.9) return "#ffe066";      // Середня (Жовтий)
+    if (v >= 0.7) return "#4cff8f";      // Слабка (Зелений)
+    return "#00eaffff";                // Дуже слабка (Неон блакитний/зелений)
 }
 
 // Заголовок
