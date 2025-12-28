@@ -96,7 +96,7 @@ input,
 /* MINIMIZED режим */
 #fibChart.minimized {
     overflow: hidden;
-    height: 30px;
+    height: 40px;
 }
 
 
@@ -144,36 +144,6 @@ input,
   flex-direction: row;
   gap: 6px;
 }
-
-/* .msg {
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #0d1117;
-  color: #ffffff;
-  font-size: 12px;
-  opacity: 0;
-  transform: translateY(6px);
-  animation: fadeInUp 2.25s ease forwards;
-} */
-
-/* .msg.up {
-  border-left-color: #4caf50;
-}
-
-.msg.down {
-  border-left-color: #f44336;
-} */
-
-/* @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-} */
 
 /* Футер */
 footer {
@@ -332,6 +302,7 @@ footer div {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+   gap: 30px;
 }
 
 #countdown {
@@ -588,7 +559,7 @@ footer div {
     width: 100%; 
   }
   #fibChart {
-    height: 120px;
+    height: 150px;
     border-radius: 6px;
     width: 100%; 
   }

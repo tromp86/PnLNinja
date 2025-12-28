@@ -151,7 +151,7 @@ for (let i = 0; i < fib.length - 1; i++) {
     }
 }
 
-/// ============================
+// ============================
 // MINIMIZED MODE (STATIC TEXT)
 // ============================
 if (fibMinimized) {
@@ -159,7 +159,6 @@ if (fibMinimized) {
 
     const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
 
-    // Внутрішній розмір canvas = CSS-висота (30px) × dpr
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -171,15 +170,13 @@ if (fibMinimized) {
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#ffffff";
 
-    // Витягування по вертикалі
     ctx.save();
     ctx.scale(1, 1.6);
     ctx.fillText(txt, width / 2, (height / 2) / 1.6);
     ctx.restore();
 
-    return;
+    return; 
 }
-
 
 // ============================
 // FULL MODE
@@ -238,67 +235,73 @@ ctx.font = "12px 'SF Pro Text', sans-serif";
 ctx.fillText("Low:  " + swingLow.toFixed(2), 10, height - 20);
 ctx.fillText("High: " + swingHigh.toFixed(2), 10, height - 8);
 
-/// ============================
+// ============================
 // TRADINGVIEW PANEL (right block)
 // ============================
 
 // Адаптивні параметри
 const isMobile = width < 500;
 
+// Функції допомоги
+function strengthColor(v) {
+    if (v >= 1.5) return "#ff6b6b";      // Very Strong
+    if (v >= 1.2) return "#ff9f40";      // Strong
+    if (v >= 0.9) return "#ffe066";      // Medium
+    if (v >= 0.7) return "#4cff8f";      // Weak
+    return "#00eaffff";                 // Very Weak
+}
+
+function strengthText(v) {
+    if (v >= 1.5) return "Very Strong";
+    if (v >= 1.2) return "Strong";
+    if (v >= 0.9) return "Medium";
+    if (v >= 0.7) return "Weak";
+    return "Very Weak";
+}
+
 // Панельні параметри
-const panelWidth = isMobile ? 100 : 200;
-const panelHeight = isMobile ? 70 : 100;
-const panelX = isMobile ? width - panelWidth - 0 : width - panelWidth - 8;
-const panelY = 8;
+const panelWidth = isMobile ? 170 : 280; 
+const panelHeight = isMobile ? 75 : 150; 
+const panelX = width - panelWidth - 10; // Однакова логіка для обох
+
+const panelY = isMobile ? 45 : 0; 
+
 const panelRadius = 8;
 
+
 // Фон панелі
-ctx.fillStyle = "rgba(20, 24, 33, 0.65)";
+ctx.fillStyle = "rgba(20, 24, 33, 0.36)";
 ctx.beginPath();
-ctx.moveTo(panelX + panelRadius, panelY);
-ctx.lineTo(panelX + panelWidth - panelRadius, panelY);
-ctx.quadraticCurveTo(panelX + panelWidth, panelY, panelX + panelWidth, panelY + panelRadius);
-ctx.lineTo(panelX + panelWidth, panelY + panelHeight - panelRadius);
-ctx.quadraticCurveTo(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth - panelRadius, panelY + panelHeight);
-ctx.lineTo(panelX + panelRadius, panelY + panelHeight);
-ctx.quadraticCurveTo(panelX, panelY + panelHeight, panelX, panelY + panelHeight - panelRadius);
-ctx.lineTo(panelX, panelY + panelRadius);
-ctx.quadraticCurveTo(panelX, panelY, panelX + panelRadius, panelY);
+ctx.roundRect(panelX, panelY, panelWidth, panelHeight, panelRadius); // Сучасний метод округлення
 ctx.fill();
 
 // Внутрішній падінг
 const padX = panelX + 12;
-let py = panelY + (isMobile ? 13 : 18);
-
-function strengthColor(v) {
-    if (v >= 1.5) return "#ff6b6b";      // Дуже сильна (Червоний)
-    if (v >= 1.2) return "#ff9f40";      // Сильна (Помаранчевий)
-    if (v >= 0.9) return "#ffe066";      // Середня (Жовтий)
-    if (v >= 0.7) return "#4cff8f";      // Слабка (Зелений)
-    return "#00eaffff";                // Дуже слабка (Неон блакитний/зелений)
-}
+let py = panelY + (isMobile ? 15 : 20);
 
 // Заголовок
-ctx.fillStyle = "rgba(255,255,255,0.85)";
-ctx.font = isMobile ? "10px 'Orbitron', monospace" : "12px 'Orbitron', monospace";
-ctx.fillText("Market Metrics", padX, py);
-py += isMobile ? 18 : 20;
+ctx.fillStyle = "rgba(255,255,255,0.9)";
+ctx.font = isMobile ? "bold 11px 'Orbitron', monospace" : "bold 12px 'Orbitron', monospace";
+ctx.fillText("MARKET METRICS", padX, py);
+py += isMobile ? 18 : 21;
 
-// Correction
+// Налаштування шрифту для метрик
+ctx.font = isMobile ? "11px 'SF Pro Text', sans-serif" : "12px 'SF Pro Text', sans-serif";
+
+// --- Рядок Correction ---
 ctx.fillStyle = strengthColor(correctionDepth);
-ctx.font = isMobile ? "10px 'SF Pro Text', sans-serif" : "12px 'SF Pro Text', sans-serif";
-ctx.fillText("Correction: " + (correctionDepth * 100).toFixed(1) + "%", padX, py);
+ctx.fillText(`Correction: ${(correctionDepth * 100).toFixed(1)}% (${strengthText(correctionDepth)})`, padX, py);
 py += isMobile ? 16 : 18;
 
-// Impulse
-ctx.fillStyle = strengthColor(impulseStrength / 100);
-ctx.fillText("Impulse: " + impulseStrength.toFixed(1) + "%", padX, py);
+// --- Рядок Impulse ---
+const impVal = impulseStrength / 100;
+ctx.fillStyle = strengthColor(impVal);
+ctx.fillText(`Impulse: ${impulseStrength.toFixed(1)}% (${strengthText(impVal)})`, padX, py);
 py += isMobile ? 16 : 18;
 
-// Volume
+// --- Рядок Volume ---
 ctx.fillStyle = strengthColor(volumeStrength);
-ctx.fillText("Volume: " + volumeStrength.toFixed(2) + "x", padX, py);
-py += isMobile ? 16 : 18;
+ctx.fillText(`Volume: ${volumeStrength.toFixed(2)}x (${strengthText(volumeStrength)})`, padX, py);
 }
 
 // ===============================
