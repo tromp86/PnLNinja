@@ -191,14 +191,21 @@ ctx.fillStyle = "#c6d5e3ff";
 ctx.font = "13px 'Orbitron', monospace";
 ctx.fillText("Fibonacci Impulse", 10, 12);
 
-// ACTIVE ZONE
 if (activeZone) {
     const x1 = scaleX(activeZone.left.val);
     const x2 = scaleX(activeZone.right.val);
-    ctx.fillStyle = "rgba(0, 150, 255, 0.12)";
-    ctx.fillRect(x1, 20, x2 - x1, height - 20);
-}
 
+    // позиція ціни всередині зони (0 → 1)
+    const t = (last - activeZone.left.val) /
+              (activeZone.right.val - activeZone.left.val);
+
+const r = Math.floor(160 - t * 160);   // 160 → 0
+const g = Math.floor(290 - t * 140);   // 290 → 150 (clamped to 255)
+const b = Math.floor(135 + t * 120);   // 135 → 255
+
+ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.12)`;
+ctx.fillRect(x1, 20, x2 - x1, height - 20);
+}
 // FIB LINES
 ctx.strokeStyle = "rgba(255,255,255,0.25)";
 ctx.lineWidth = 1;

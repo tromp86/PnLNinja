@@ -374,7 +374,7 @@ footer div {
 
 /* animated-header */
 .market-context {
-    animation: fadeSlide 0.35s ease-out;
+    animation: fadeSlide 1.35s ease-out;
     white-space: pre-line;
 }
 
@@ -457,7 +457,47 @@ footer div {
   stroke-width: 1.5;
   filter: url(#glow);
   opacity: 0.8;
-  animation: shieldPulse 10s ease-in-out infinite;
+  animation: shieldPulse 15s ease-in-out infinite;
+  color: #ff00d9;
+}
+/* Базовий стиль цифри 86 всередині щита */
+.shield-number {
+  font-family: "Roboto Mono", monospace;
+  font-size: 82px;
+  fill: url(#shieldGrad);
+  /* filter: url(#glow); */
+  letter-spacing: 2px;
+  paint-order: stroke;
+  animation: numberPulse 15s infinite ease-in-out;
+  stroke: #ff1493;
+  stroke-width: 4.5;
+  filter: url(#glow)
+            drop-shadow(0 0 22px #ff2a16)
+            drop-shadow(0 0 22px #ff1493);
+  opacity: 0;
+}
+@keyframes numberPulse {
+  0% {
+    opacity: 0;
+  }
+    75% {
+    opacity: 0;
+    stroke-width: 2.5;
+  }
+  80% {
+    stroke: #ff1493;
+    stroke-width: 4.5;
+    filter: url(#glow)
+            drop-shadow(0 0 22px #ff29166d)
+            drop-shadow(0 0 22px #ff149191);
+    opacity: 1;
+  }
+      90% { 
+    opacity: 1;
+  }
+    95% { 
+    opacity: 0;
+  }
 }
 
 @keyframes shieldPulse {
@@ -466,13 +506,16 @@ footer div {
     stroke-width: 1.5;
     filter: url(#glow) drop-shadow(0 0 2px #1484b8);
   }
-  75% {
+  65% {
     stroke: #ff1493;
     stroke-width: 5;
     filter: url(#glow) drop-shadow(0 0 15px #ff2a16) drop-shadow(0 2 25px #ff1493);
     opacity: 1;
   }
-  85% {
+  75% {
+    opacity: 0;
+  }
+    95% {
     opacity: 0;
   }
 }
@@ -510,6 +553,19 @@ footer div {
   0%,100% { text-shadow: 0 0 4px #1ee6c1; }
   50% { text-shadow: 0 0 12px #bf00ff; }
 }
+
+.signal-block {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #e5e5e5;
+    background: rgba(20, 20, 20, 0.65);
+    padding: 14px 20px;
+    margin: 2px;
+    width: fit-content;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 
 /* ✅ Гарантована адаптація для Google Pixel / Android Chrome */
 @media (max-width: 500px) {
