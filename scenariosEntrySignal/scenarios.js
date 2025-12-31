@@ -9,7 +9,7 @@ import {
   priceBreaksBelow,
   calculateLiquidationZones,
   countTrue,
-} from "./indicators.js";
+} from "../indicators.js";
 
 export const scenarios = (data, thresholds) => {
   const {

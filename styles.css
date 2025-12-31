@@ -1,5 +1,5 @@
 /* Dark Theme for Crypto Analyzer */
-/* background-color: #121212; */
+
 * {
   margin: 0;
   padding: 0;
@@ -46,17 +46,28 @@ h3:hover {
     0 0 30px #00120c;
 }
 /* Обгортка для canvas + input */
-.wrapCanvas {
-  /* background: #0d1117; */
+/* .wrapCanvas {
+
   background: rgba(46, 53, 69, 0.4);
   padding: 10px;
   border-radius: 10px;
-  /* border: 1px solid rgba(255, 255, 255, 0.06); */
+
   display: flex;
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
   transition: all 0.5s ease;
+} */
+.wrapCanvas {
+  background: rgba(46, 53, 69, 0.4);
+  padding: 10px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  box-sizing: border-box;
 }
 
 .wrapCanvas:hover {
@@ -556,17 +567,38 @@ footer div {
 
 .signal-block {
     font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    color: #e5e5e5;
-    background: rgba(20, 20, 20, 0.65);
-    padding: 14px 20px;
-    margin: 2px;
-    width: fit-content;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(5px, auto));
+    justify-content: start;
+    /* gap: 5px 0px; */
+    padding-top: 8px;
+    padding-right: 10px;
+    /* padding: 10px 12px; */
+    background: rgba(20, 23, 28, 0.55);
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    width: fit-content;
 }
 
+.sb-item {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: 6px;
+    font-size: 14px;
+    color: #e5e5e5;
+    white-space: nowrap;
+    padding: 0px;
+}
 
+.sb-item span {
+    opacity: 0.75;
+}
+
+.sb-item strong {
+    font-weight: 600;
+    color: #fff;
+}
 /* ✅ Гарантована адаптація для Google Pixel / Android Chrome */
 @media (max-width: 500px) {
 

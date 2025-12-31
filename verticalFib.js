@@ -204,7 +204,7 @@ const g = Math.floor(290 - t * 140);   // 290 → 150 (clamped to 255)
 const b = Math.floor(135 + t * 120);   // 135 → 255
 
 ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.12)`;
-ctx.fillRect(x1, 20, x2 - x1, height - 20);
+ctx.fillRect(x1, 25, x2 - x1, height - 20);
 }
 // FIB LINES
 ctx.strokeStyle = "rgba(255,255,255,0.25)";

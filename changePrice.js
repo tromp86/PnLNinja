@@ -1,6 +1,35 @@
-// let lastPrice = null;
+// ===============================
+// STATE
+// ===============================
+const state = {
+  priceHistory: [],
+  lastPrice: null,
+  initialized: false,
+  lastUpdateTime: 0,
+  ui: {
+    progressContainer: null,
+    indicator: null,
+    changeValueSpan: null,
+    marketStateDiv: null
+  }
+};
 
-// Отримання поточної ціни з Binance
+// ===============================
+// HELPERS
+// ===============================
+function throttle(fn, delay) {
+  return function (...args) {
+    const now = Date.now();
+    if (now - state.lastUpdateTime >= delay) {
+      state.lastUpdateTime = now;
+      fn.apply(this, args);
+    }
+  };
+}
+
+// ===============================
+// API
+// ===============================
 async function getPrice(symbol) {
   try {
     const resp = await fetch(
@@ -8,64 +37,14 @@ async function getPrice(symbol) {
     );
     const data = await resp.json();
     return data.price ? parseFloat(data.price) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
 
-// Відслідковування процентної зміни
-async function trackPrice() {
-  let symbol = document
-    .getElementById("symbol")
-    .value.trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, ""); // прибираємо / - _ пробіли
-  if (!symbol) {
-    return;
-  }
-
-  // ✅ Автоматично додаємо USDT, якщо немає
-  if (!symbol.endsWith("USDT")) {
-    symbol = symbol + "USDT";
-  }
-
-  const price = await getPrice(symbol);
-  if (!price) return;
-
-  // Якщо lastPrice ще не встановлено, беремо першу ціну
-  if (lastPrice === null) {
-    lastPrice = price;
-    return;
-  }
-
-  const change = ((price - lastPrice) / lastPrice) * 100;
-
-  // Повідомляємо тільки якщо зміна >= 0.02%
-  if (Math.abs(change) >= 0.02) {
-    const sign = change > 0 ? "+" : "";
-    appendMessage(`🔔 ${symbol}: ${sign}${change.toFixed(2)}%`);
-    lastPrice = price; // оновлюємо останню відому ціну
-  }
-}
-
-// ===============================
-// STATE
-// ===============================
-let priceHistory = [];
-let lastPrice = null;
-
-let progressContainer = null;
-let indicator = null;
-let changeValueSpan = null;
-let marketStateDiv = null;
-let isInitialized = false;
-
-
 // ===============================
 // PURE FUNCTIONS
 // ===============================
-
-// ✅ Генерація кольору індикатора
 function getIndicatorColor(intensity) {
   const green = Math.round(200 - intensity * 70);
   const red = Math.round(130 + intensity * 70);
@@ -73,72 +52,71 @@ function getIndicatorColor(intensity) {
   return `rgb(${red}, ${green}, ${blue})`;
 }
 
-// ✅ Стан ринку
 function getMarketState(absChange) {
   if (absChange < 0.015) return { state: "Consolidation", color: "#88c9a1" };
   if (absChange < 0.03) return { state: "Moderate movement", color: "#c9a188" };
   return { state: "Fast movement", color: "#c98899" };
 }
 
-// ✅ Адаптивна чутливість (плавність)
 function getSensitivity(historyLength) {
   if (historyLength <= 10) return 1200;
   if (historyLength <= 20) return 800;
   if (historyLength <= 30) return 500;
   if (historyLength <= 40) return 300;
-  return 200; // ✅ для 50 значень — плавно
+  return 200;
 }
-
 
 // ===============================
 // PRICE HISTORY
 // ===============================
 function updatePriceHistory(price) {
-  priceHistory.push(price);
-  if (priceHistory.length > 100) priceHistory.shift();
+  state.priceHistory.push(price);
+  if (state.priceHistory.length > 100) state.priceHistory.shift();
 }
 
-
 // ===============================
-// UI: PROGRESS LINE INIT
+// UI INIT
 // ===============================
 function initProgressLine() {
-  progressContainer = document.createElement("div");
-  progressContainer.id = "progressLine";
-  progressContainer.style.cssText = `
+  const container = document.createElement("div");
+  container.id = "progressLine";
+  container.style.cssText = `
     margin: 11px 0;
     padding: 10px;
     background: rgba(30, 35, 45, 0.4);
     border-radius: 12px;
     border: 1px solid rgba(157, 189, 178, 0.2);
   `;
+  state.ui.progressContainer = container;
 
-  // ---------- Top row ----------
+  // TOP ROW
   const topRow = document.createElement("div");
   topRow.style.cssText =
-    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
+    "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;";
 
   const changeLabel = document.createElement("div");
   changeLabel.style.cssText =
-    "font-size: 12px; color: #a8b5c0; font-family: 'Orbitron', monospace;";
+    "font-size:12px;color:#a8b5c0;font-family:'Orbitron',monospace;";
   changeLabel.textContent = "Change: ";
 
-  changeValueSpan = document.createElement("span");
-  changeValueSpan.style.cssText =
-    "font-weight: bold; font-size: 14px; transition: color 1.3s ease;";
-  changeValueSpan.textContent = "+0.0000%";
+  const changeValue = document.createElement("span");
+  changeValue.style.cssText =
+    "font-weight:bold;font-size:14px;transition:color 1.3s ease;";
+  changeValue.textContent = "+0.0000%";
+  state.ui.changeValueSpan = changeValue;
 
-  changeLabel.appendChild(changeValueSpan);
+  changeLabel.appendChild(changeValue);
 
-  marketStateDiv = document.createElement("div");
-  marketStateDiv.style.cssText =
-    "font-size: 11px; font-weight: bold; font-family: 'Orbitron', monospace; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; transition: all 1.3s ease;";
-  marketStateDiv.textContent = "Consolidation";
+  const marketState = document.createElement("div");
+  marketState.style.cssText =
+    "font-size:11px;font-weight:bold;font-family:'Orbitron',monospace;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:6px;transition:all 1.3s ease;";
+  marketState.textContent = "Consolidation";
+  state.ui.marketStateDiv = marketState;
 
   topRow.appendChild(changeLabel);
-  topRow.appendChild(marketStateDiv);
+  topRow.appendChild(marketState);
 
-  // ---------- Progress bar ----------
+  // PROGRESS BAR
   const progressBar = document.createElement("div");
   progressBar.style.cssText = `
     position: relative;
@@ -151,7 +129,7 @@ function initProgressLine() {
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
   `;
 
-  indicator = document.createElement("div");
+  const indicator = document.createElement("div");
   indicator.style.cssText = `
     position: absolute;
     left: 50%;
@@ -165,79 +143,68 @@ function initProgressLine() {
     border: 2px solid rgba(255, 255, 255, 0.6);
     transition: all 1.6s ease;
   `;
+  state.ui.indicator = indicator;
 
   progressBar.appendChild(indicator);
 
-  // ---------- Bottom row ----------
+  // BOTTOM ROW
   const bottomRow = document.createElement("div");
   bottomRow.style.cssText =
-    "display: flex; justify-content: space-between; font-size: 10px; color: #8a95a0; margin-top: 6px; font-family: 'Orbitron', monospace;";
+    "display:flex;justify-content:space-between;font-size:10px;color:#8a95a0;margin-top:6px;font-family:'Orbitron',monospace;";
+  bottomRow.innerHTML = `
+    <span style="color:#c98899">-0.1% 🔴</span>
+    <span style="color:#88c9a1">0% 🟢</span>
+    <span style="color:#c98899">+0.1% 🔴</span>
+  `;
 
-  const leftLabel = document.createElement("span");
-  leftLabel.style.color = "#c98899";
-  leftLabel.textContent = "-0.1% 🔴";
+  container.appendChild(topRow);
+  container.appendChild(progressBar);
+  container.appendChild(bottomRow);
 
-  const centerLabel = document.createElement("span");
-  centerLabel.style.color = "#88c9a1";
-  centerLabel.textContent = "0% 🟢";
+  const messagesContainer = document.getElementById("priceMessages");
+  const parent = messagesContainer
+    ? messagesContainer.parentElement
+    : document.body;
 
-  const rightLabel = document.createElement("span");
-  rightLabel.style.color = "#c98899";
-  rightLabel.textContent = "+0.1% 🔴";
+  parent.insertBefore(container, messagesContainer || parent.firstChild);
 
-  bottomRow.appendChild(leftLabel);
-  bottomRow.appendChild(centerLabel);
-  bottomRow.appendChild(rightLabel);
-
-  // ---------- Assembly ----------
-  progressContainer.appendChild(topRow);
-  progressContainer.appendChild(progressBar);
-  progressContainer.appendChild(bottomRow);
-
-const messagesContainer = document.getElementById("priceMessages");
-const parent = messagesContainer ? messagesContainer.parentElement : document.querySelector(".container") || document.body;
-
-parent.insertBefore(progressContainer, messagesContainer || parent.firstChild);
-
-  isInitialized = true;
+  state.initialized = true;
 }
 
-
 // ===============================
-// UI: PROGRESS LINE UPDATE
+// UI UPDATE
 // ===============================
 function updateProgressLine() {
-  if (priceHistory.length < 2) return;
-  if (!isInitialized) initProgressLine();
+  if (state.priceHistory.length < 2) return;
+  if (!state.initialized) initProgressLine();
 
-  const firstPrice = priceHistory[0];
-  const lastPriceInHistory = priceHistory[priceHistory.length - 1];
-  const change = ((lastPriceInHistory - firstPrice) / firstPrice) * 100;
+  const first = state.priceHistory[0];
+  const last = state.priceHistory[state.priceHistory.length - 1];
+  const change = ((last - first) / first) * 100;
 
-  const sensitivity = getSensitivity(priceHistory.length);
+  const sensitivity = getSensitivity(state.priceHistory.length);
   const normalized = Math.max(0, Math.min(100, 50 + change * sensitivity));
 
   const absChange = Math.abs(change);
-  const { state, color } = getMarketState(absChange);
+  const { state: marketState, color } = getMarketState(absChange);
 
-  const distanceFromCenter = Math.abs(50 - normalized);
-  const intensity = distanceFromCenter / 50;
+  const distance = Math.abs(50 - normalized);
+  const intensity = distance / 50;
   const indicatorColor = getIndicatorColor(intensity);
 
-  indicator.style.left = `${normalized}%`;
-  indicator.style.background = indicatorColor;
-  indicator.style.boxShadow = `0 0 10px ${indicatorColor}, 0 0 18px ${indicatorColor}80`;
+  state.ui.indicator.style.left = `${normalized}%`;
+  state.ui.indicator.style.background = indicatorColor;
+  state.ui.indicator.style.boxShadow = `0 0 10px ${indicatorColor}, 0 0 18px ${indicatorColor}80`;
 
-  changeValueSpan.style.color = indicatorColor;
-  changeValueSpan.textContent = `${change > 0 ? "+" : ""}${change.toFixed(4)}%`;
+  state.ui.changeValueSpan.style.color = indicatorColor;
+  state.ui.changeValueSpan.textContent = `${change > 0 ? "+" : ""}${change.toFixed(4)}%`;
 
-  marketStateDiv.style.color = color;
-  marketStateDiv.textContent = state;
+  state.ui.marketStateDiv.style.color = color;
+  state.ui.marketStateDiv.textContent = marketState;
 }
 
-
 // ===============================
-// PRICE TRACKING
+// PRICE TRACKING (ONE VERSION)
 // ===============================
 async function trackPrice() {
   let symbol = document
@@ -254,75 +221,40 @@ async function trackPrice() {
 
   updatePriceHistory(price);
 
-  if (lastPrice === null) {
-    lastPrice = price;
+  if (state.lastPrice === null) {
+    state.lastPrice = price;
     updateProgressLine();
     return;
   }
 
-  const change = ((price - lastPrice) / lastPrice) * 100;
+  const change = ((price - state.lastPrice) / state.lastPrice) * 100;
 
   if (Math.abs(change) >= 0.01) {
-    lastPrice = price;
+    state.lastPrice = price;
   }
 
   updateProgressLine();
 }
+
 // ===============================
-// INTERVAL
+// EVENTS
 // ===============================
-setInterval(trackPrice, 10000);
-// ✅ Малюємо шкалу одразу після завантаження сайту
-document.addEventListener("DOMContentLoaded", initProgressLine);
-
-
-
-
-
-// --- Оновлюємо lastPrice при зміні символу ---
-document.getElementById("symbol").addEventListener("change", () => {
-  lastPrice = null; // скидаємо, щоб взяти нову ціну
+document.addEventListener("DOMContentLoaded", () => {
+  initProgressLine();
+  state.ui.progressContainer.classList.add("compact");
 });
 
-function addPriceMessage(price, prevPrice) {
-  const container = document.getElementById("priceMessages");
-
-  const item = document.createElement("div");
-  item.classList.add("priceItem");
-
-  // напрямок
-  if (price > prevPrice) item.classList.add("up");
-  else if (price < prevPrice) item.classList.add("down");
-  else item.classList.add("neutral");
-
-  const now = new Date();
-  const time = now.toLocaleTimeString();
-
-  item.innerHTML = `
-        <span class="priceValue">${price.toFixed(4)}</span>
-        <span class="priceTime">${time}</span>
-    `;
-
-  container.prepend(item); // нові зверху
-}
-// document.addEventListener("click", (e) => {
-//   if (e.target.closest("#progressLine")) {
-//     progressContainer.classList.toggle("compact");
-//   }
-// });
-
-// Додай клас compact на старті
-
-// Десь на початку коду, після завантаження сторінки
-window.addEventListener('DOMContentLoaded', () => {
-  const progressContainer = document.getElementById("progressLine");
-  progressContainer.classList.add("compact");
-});
-
-// Твій існуючий код
 document.addEventListener("click", (e) => {
   if (e.target.closest("#progressLine")) {
-    progressContainer.classList.toggle("compact");
+    state.ui.progressContainer.classList.toggle("compact");
   }
 });
 
+document.getElementById("symbol").addEventListener("change", () => {
+  state.lastPrice = null;
+});
+
+// ===============================
+// INTERVAL
+// ===============================
+setInterval(throttle(trackPrice, 1500), 10000);
