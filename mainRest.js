@@ -37,19 +37,29 @@ function startCountdown() {
 // ===============================
 // API REQUESTS
 // ===============================
+async function safeJson(resp, fallback) {
+  if (!resp.ok) return fallback;
+  try {
+    return await resp.json();
+  } catch {
+    return fallback;
+  }
+}
+
 async function fetchMarketData(symbol) {
   const [oiResp, fResp, kResp] = await Promise.all([
     fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`),
     fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&limit=2`),
-    fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=2h&limit=500`)
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1w&limit=500`)
   ]);
 
   return {
-    oiData: await oiResp.json().catch(() => ({})),
-    fArr: await fResp.json().catch(() => []),
-    klines: await kResp.json().catch(() => [])
+    oiData: await safeJson(oiResp, {}),
+    fArr: await safeJson(fResp, []),
+    klines: await safeJson(kResp, [])
   };
 }
+
 // ===============================
 // INDICATOR CALCULATIONS
 // ===============================
@@ -149,13 +159,13 @@ function renderOutput(symbol, lastPrice, OI, funding, indicators, aiResult) {
 // ===============================
 // MAIN ANALYZE FUNCTION (MAX POWER VERSION)
 // ===============================
+let autoSelectTimer = null;
+
+
 async function analyze() {
     const inputEl = document.getElementById('symbol');
     const out = document.getElementById('output');
 
-    // -------------------------------
-    // 1. Normalize symbol
-    // -------------------------------
     let symbol = inputEl.value.trim().toUpperCase();
     if (!symbol) {
         out.innerHTML = "<div>Введіть символ...</div>";
@@ -317,6 +327,8 @@ function updateFibFromInput() {
 input.addEventListener("input", () => {
   const value = input.value.trim().toUpperCase();
 
+  if (autoSelectTimer) clearTimeout(autoSelectTimer);
+
   if (!value) {
     box.style.display = "none";
     return;
@@ -329,9 +341,23 @@ input.addEventListener("input", () => {
     return;
   }
 
-  box.innerHTML = filtered.slice(0, 8).map(sym => `<div>${sym}</div>`).join("");
+  box.innerHTML = filtered
+    .slice(0, 8)
+    .map(sym => `<div>${sym}</div>`)
+    .join("");
+
   box.style.display = "block";
+
+  // ✅ АВТОВИБІР ПЕРШОЇ ПІДСказКИ ЧЕРЕЗ 2 СЕК
+  autoSelectTimer = setTimeout(() => {
+    input.value = filtered[0];
+    box.style.display = "none";
+    lastData = {};
+    analyze();
+    updateFibFromInput();
+  }, 1500);
 });
+
 
 box.addEventListener("click", (e) => {
   if (e.target.tagName === "DIV") {

@@ -359,21 +359,19 @@ footer div {
     font-weight: 600;
 }
 
-/* ✅ фон бару — нейтральний, але в палітрі */
 #marketStrengthBar {
     width: 100%;
     height: 6px;
-    background: rgba(136, 201, 161, 0.12); /* базовий soft green */
+    background: rgba(136, 201, 161, 0.12); 
     border-radius: 3px;
     overflow: hidden;
     margin-bottom: 4px;
 }
 
-/* ✅ заливка — буде мінятися JS-ом */
 #marketStrengthFill {
     height: 100%;
     width: 0%;
-    background: #88c9a17b; /* default: consolidation */
+    background: #88c9a17b; 
     transition: width 0.3s ease, background 0.3s ease;
 }
 
@@ -381,14 +379,11 @@ footer div {
     font-size: 10px;
     opacity: 0.65;
 }
-
-
-/* animated-header */
 .market-context {
     animation: fadeSlide 1.35s ease-out;
     white-space: pre-line;
-}
-
+} 
+/* score  */
 @keyframes fadeSlide {
     from {
         opacity: 0;
@@ -531,11 +526,6 @@ footer div {
   }
 }
 
-.scan {
-  fill: url(#scanGrad);
-  animation: scan 2.5s infinite linear;
-}
-
 .handle {
   fill: #ffffff;
   animation: handlePulse 3s infinite ease-in-out;
@@ -553,11 +543,33 @@ footer div {
   animation: textGlow 3s infinite ease-in-out;
 }
 
-
 @keyframes scan {
-  0% { transform: translateY(0); opacity: 0; }
-  50% { opacity: 1; }
-  100% { transform: translateY(100px); opacity: 0; }
+  /* старт */
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  /* активна фаза сканування */
+  15% {
+    opacity: 1;
+  }
+
+  35% {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+
+  /* пауза до кінця циклу */
+  100% {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+}
+
+.scan {
+  fill: url(#scanGrad);
+  animation: scan 15s linear infinite;
 }
 
 @keyframes textGlow {

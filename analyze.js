@@ -186,6 +186,15 @@ const renderedSignals = renderEntrySignals({
     data
 });
 
+const box = document.getElementById("marketStrengthBox");
+
+computeMarketStrength(
+  data,
+  THRESHOLDS,
+  activeScenarios,
+  compositeActive,
+  box // ← передаємо target
+);
 // =======================
 // RETURN
 // =======================
