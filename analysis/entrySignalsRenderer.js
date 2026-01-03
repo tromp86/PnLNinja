@@ -139,28 +139,39 @@ export function renderEntrySignals({
       }
     }
 
-    // CONFIDENCE SCORE
-    let confidence = 50;
-    confidence += sig.priority * 5;
-    if (sig.context === "trend") confidence += 10;
-    if (sig.context === "reversion") confidence += 5;
-    if (sig.context === "intraday") confidence += 8;
-    if (sig.context === "momentum") confidence += 12;
-    confidence += Math.floor(marketStrength.score * 0.2);
-    if (compositeActive) confidence += 10;
-    confidence = Math.max(0, Math.min(100, confidence));
+let confidence = 45;
+
+// priority
+confidence += sig.priority * 4;
+
+// context (м’якше)
+if (sig.context === "trend") confidence += 8;
+if (sig.context === "reversion") confidence += 4;
+if (sig.context === "intraday") confidence += 6;
+if (sig.context === "momentum") confidence += 9;
+
+// market strength — з обмеженням
+confidence += Math.min(15, Math.floor(marketStrength.score * 0.15));
+
+// composite — не домінує
+if (compositeActive) confidence += 6;
+
+// фінальний clamp (ВАЖЛИВО)
+confidence = Math.max(5, Math.min(95, confidence));
+
 
     // OUTPUT
     entrySignalsText += `${star}${typeColor} | ${ctxIcon} ${sig.name} (priority ${sig.priority})${boost}\n`;
 
 entrySignalsText += `
 <div class="signal-block">
-  <div class="sb-item"><span>entry:</span> <strong>${entryPrice.toFixed(2)}</strong></div>
-  <div class="sb-item"><span>stop:</span> <strong>${stopHigh.toFixed(2)}</strong></div>
-  <div class="sb-item"><span>tp1:</span> <strong>${tp1.toFixed(2)}</strong></div>
+  <div class="sb-item"><span>entry:</span> <strong>${Number(entryPrice).toFixed(2)}</strong></div>
+  <div class="sb-item"><span>stop:</span> <strong>${Number(stopHigh).toFixed(2)}</strong></div>
+  <div class="sb-item"><span>tp1:</span> <strong>${Number(tp1).toFixed(2)}</strong></div>
   <div class="sb-item"><span>confidence:</span> <strong>${confidence}%</strong></div>
 </div>
 `;
+
   });
 
   return entrySignalsText;

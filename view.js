@@ -255,7 +255,7 @@ async function loadMiniChart(symbol) {
 
   try {
     const resp = await fetch(
-      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=50`
+      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=2h&limit=300`
     );
 
     const data = await resp.json();

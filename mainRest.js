@@ -13,6 +13,9 @@ let lastData = {};
 let countdown = 60;
 let countdownInterval = null;
 
+let isAutoRefresh = false;
+
+
 let allSymbols = [];
 const output = document.getElementById('output');
 // ===============================
@@ -50,7 +53,7 @@ async function fetchMarketData(symbol) {
   const [oiResp, fResp, kResp] = await Promise.all([
     fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`),
     fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&limit=2`),
-    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1w&limit=500`)
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=4h&limit=500`)
   ]);
 
   return {
@@ -185,7 +188,10 @@ await loadFibChart(symbol);
     startCountdown();
     out.classList.add('updating');
     setTimeout(() => out.classList.remove('updating'), 500);
-    out.innerHTML = "Завантаження...";
+    if (!isAutoRefresh) {
+  out.innerHTML = "Завантаження...";
+}
+
 
     try {
         // -------------------------------
@@ -293,13 +299,38 @@ await loadFibChart(symbol);
         out.innerHTML = "<div class='warning'>Помилка при отриманні даних</div>";
     }
 }
-// ===============================
-// AUTO START
+/// ===============================
+// AUTO START (ULTRA SMOOTH)
 // ===============================
 window.onload = () => {
-  analyze();
-  setInterval(analyze, 60000);
+
+  const out = document.getElementById("output");
+
+  // перший плавний запуск
+  setTimeout(async () => {
+    isAutoRefresh = false;
+    out.style.opacity = "0.9";
+    await analyze();
+    out.style.opacity = "1";
+  }, 300);
+
+  // автооновлення
+  setInterval(async () => {
+    const inputEl = document.getElementById("symbol");
+    if (!inputEl.value.trim()) return;
+
+    isAutoRefresh = true;
+    await analyze();
+
+    requestAnimationFrame(() => {
+      out.style.opacity = "1";
+      isAutoRefresh = false;
+    });
+
+  }, 60000);
 };
+
+
 // ===============================
 // SYMBOL SUGGESTIONS
 // ===============================
