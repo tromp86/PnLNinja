@@ -1,30 +1,34 @@
 // ===============================
-// STATE
+// STATE (PER SYMBOL)
 // ===============================
-const state = {
-  priceHistory: [],
-  lastPrice: null,
-  initialized: false,
-  lastUpdateTime: 0,
-  ui: {
-    progressContainer: null,
-    indicator: null,
-    changeValueSpan: null,
-    marketStateDiv: null
-  }
-};
+const priceTrackers = new Map();
+let currentSymbol = '';
+let trackerInterval = null;
+let isInitialized = false;
 
 // ===============================
 // HELPERS
 // ===============================
 function throttle(fn, delay) {
+  let lastCall = 0;
   return function (...args) {
     const now = Date.now();
-    if (now - state.lastUpdateTime >= delay) {
-      state.lastUpdateTime = now;
+    if (now - lastCall >= delay) {
+      lastCall = now;
       fn.apply(this, args);
     }
   };
+}
+
+function getSymbolFromInput() {
+  const input = document.getElementById("symbol");
+  if (!input) return '';
+  
+  let symbol = input.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!symbol) return '';
+  if (!symbol.endsWith("USDT")) symbol += "USDT";
+  
+  return symbol;
 }
 
 // ===============================
@@ -43,6 +47,36 @@ async function getPrice(symbol) {
 }
 
 // ===============================
+// STATE MANAGEMENT
+// ===============================
+function getOrCreateTracker(symbol) {
+  if (!priceTrackers.has(symbol)) {
+    priceTrackers.set(symbol, {
+      priceHistory: [],
+      lastPrice: null,
+      isCompact: true,
+      lastUpdateTime: 0,
+      ui: {
+        container: null,
+        indicator: null,
+        changeValueSpan: null,
+        marketStateDiv: null,
+        compactText: null
+      }
+    });
+  }
+  return priceTrackers.get(symbol);
+}
+
+function cleanupOldTracker(symbol) {
+  const oldTracker = priceTrackers.get(symbol);
+  if (oldTracker && oldTracker.ui.container) {
+    oldTracker.ui.container.remove();
+  }
+  priceTrackers.delete(symbol);
+}
+
+// ===============================
 // PURE FUNCTIONS
 // ===============================
 function getIndicatorColor(intensity) {
@@ -53,9 +87,9 @@ function getIndicatorColor(intensity) {
 }
 
 function getMarketState(absChange) {
-  if (absChange < 0.015) return { state: "Consolidation", color: "#88c9a1" };
-  if (absChange < 0.03) return { state: "Moderate movement", color: "#c9a188" };
-  return { state: "Fast movement", color: "#c98899" };
+  if (absChange < 0.015) return { state: "Consolidation", color: "#88c9a1", emoji: "⚪" };
+  if (absChange < 0.03) return { state: "Moderate", color: "#c9a188", emoji: "🟡" };
+  return { state: "Fast move", color: "#c98899", emoji: "🔴" };
 }
 
 function getSensitivity(historyLength) {
@@ -69,192 +103,442 @@ function getSensitivity(historyLength) {
 // ===============================
 // PRICE HISTORY
 // ===============================
-function updatePriceHistory(price) {
-  state.priceHistory.push(price);
-  if (state.priceHistory.length > 100) state.priceHistory.shift();
+function updatePriceHistory(tracker, price) {
+  tracker.priceHistory.push(price);
+  if (tracker.priceHistory.length > 100) tracker.priceHistory.shift();
 }
 
 // ===============================
 // UI INIT
 // ===============================
-function initProgressLine() {
-  const container = document.createElement("div");
-  container.id = "progressLine";
-  container.style.cssText = `
-    margin: 11px 0;
-    padding: 10px;
-    background: rgba(30, 35, 45, 0.4);
-    border-radius: 12px;
-    border: 1px solid rgba(157, 189, 178, 0.2);
-  `;
-  state.ui.progressContainer = container;
+function initProgressLine(tracker) {
+  if (tracker.ui.container) {
+    tracker.ui.container.remove();
+  }
 
-  // TOP ROW
-  const topRow = document.createElement("div");
-  topRow.style.cssText =
-    "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;";
+  const container = document.createElement("div");
+  container.className = "progress-line-container";
+  container.dataset.symbol = currentSymbol || 'DEFAULT';
+  
+  container.addEventListener('click', (e) => {
+    if (e.target === container || !e.target.closest('.progress-line-change, .progress-line-market-state')) {
+      tracker.isCompact = !tracker.isCompact;
+      container.classList.toggle('compact', tracker.isCompact);
+      updateProgressLine(tracker);
+    }
+  });
+
+  const headerRow = document.createElement("div");
+  headerRow.className = "progress-line-header";
 
   const changeLabel = document.createElement("div");
-  changeLabel.style.cssText =
-    "font-size:12px;color:#a8b5c0;font-family:'Orbitron',monospace;";
-  changeLabel.textContent = "Change: ";
-
-  const changeValue = document.createElement("span");
-  changeValue.style.cssText =
-    "font-weight:bold;font-size:14px;transition:color 1.3s ease;";
-  changeValue.textContent = "+0.0000%";
-  state.ui.changeValueSpan = changeValue;
-
-  changeLabel.appendChild(changeValue);
+  changeLabel.className = "progress-line-change";
+  changeLabel.innerHTML = 'Change: <span class="progress-line-change-value">+0.0000%</span>';
+  
+  tracker.ui.changeValueSpan = changeLabel.querySelector('.progress-line-change-value');
 
   const marketState = document.createElement("div");
-  marketState.style.cssText =
-    "font-size:11px;font-weight:bold;font-family:'Orbitron',monospace;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:6px;transition:all 1.3s ease;";
-  marketState.textContent = "Consolidation";
-  state.ui.marketStateDiv = marketState;
+  marketState.className = "progress-line-market-state";
+  marketState.textContent = "Waiting data...";
+  tracker.ui.marketStateDiv = marketState;
 
-  topRow.appendChild(changeLabel);
-  topRow.appendChild(marketState);
+  headerRow.appendChild(changeLabel);
+  headerRow.appendChild(marketState);
 
-  // PROGRESS BAR
   const progressBar = document.createElement("div");
-  progressBar.style.cssText = `
-    position: relative;
-    width: 100%;
-    height: 26px;
-    background: linear-gradient(to right, #c98899 0%, #b99aa5 15%, #a8aca8 30%, #88c9a1 50%, #a8aca8 70%, #b99aa5 85%, #c98899 100%);
-    border-radius: 13px;
-    overflow: visible;
-    border: 2px solid rgba(157, 189, 178, 0.15);
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
-  `;
+  progressBar.className = "progress-line-bar";
 
   const indicator = document.createElement("div");
-  indicator.style.cssText = `
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 30px;
-    background: rgb(165, 185, 175);
-    box-shadow: 0 0 10px rgb(165, 185, 175), 0 0 18px rgba(165, 185, 175, 0.5);
-    border-radius: 3px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
-    transition: all 1.6s ease;
-  `;
-  state.ui.indicator = indicator;
+  indicator.className = "progress-line-indicator";
+  indicator.style.left = "50%";
+  indicator.style.background = "rgb(165, 185, 175)";
+  indicator.style.boxShadow = "0 0 10px rgb(165, 185, 175), 0 0 18px rgba(165, 185, 175, 0.5)";
+  tracker.ui.indicator = indicator;
 
   progressBar.appendChild(indicator);
 
-  // BOTTOM ROW
-  const bottomRow = document.createElement("div");
-  bottomRow.style.cssText =
-    "display:flex;justify-content:space-between;font-size:10px;color:#8a95a0;margin-top:6px;font-family:'Orbitron',monospace;";
-  bottomRow.innerHTML = `
+  const labelsRow = document.createElement("div");
+  labelsRow.className = "progress-line-labels";
+  labelsRow.innerHTML = `
     <span style="color:#c98899">-0.1% 🔴</span>
     <span style="color:#88c9a1">0% 🟢</span>
     <span style="color:#c98899">+0.1% 🔴</span>
   `;
 
-  container.appendChild(topRow);
+  const compactText = document.createElement("div");
+  compactText.className = "progress-line-compact-text";
+  compactText.style.cssText = `
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    pointer-events: none;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 0.5px;
+  `;
+  compactText.textContent = "click to expand";
+  tracker.ui.compactText = compactText;
+  progressBar.appendChild(compactText);
+
+  container.appendChild(headerRow);
   container.appendChild(progressBar);
-  container.appendChild(bottomRow);
+  container.appendChild(labelsRow);
+  
+  tracker.ui.container = container;
 
-  const messagesContainer = document.getElementById("priceMessages");
-  const parent = messagesContainer
-    ? messagesContainer.parentElement
-    : document.body;
+  container.classList.toggle('compact', tracker.isCompact);
 
-  parent.insertBefore(container, messagesContainer || parent.firstChild);
-
-  state.initialized = true;
+  const canvas = document.getElementById("miniChart");
+  if (canvas) {
+    canvas.parentNode.insertBefore(container, canvas.nextSibling);
+  } else {
+    const symbolInput = document.getElementById("symbol");
+    if (symbolInput) {
+      symbolInput.parentNode.insertBefore(container, symbolInput.nextSibling);
+    } else {
+      document.body.prepend(container);
+    }
+  }
 }
 
 // ===============================
 // UI UPDATE
 // ===============================
-function updateProgressLine() {
-  if (state.priceHistory.length < 2) return;
-  if (!state.initialized) initProgressLine();
+function updateProgressLine(tracker) {
+  if (!tracker.ui.container) return;
+  
+  if (tracker.priceHistory.length < 2) {
+    if (!tracker.isCompact) {
+      tracker.ui.changeValueSpan.textContent = "+0.0000%";
+      tracker.ui.changeValueSpan.style.color = "#a8b5c0";
+      tracker.ui.marketStateDiv.textContent = "Waiting data...";
+      tracker.ui.marketStateDiv.style.color = "#88c9a1";
+      tracker.ui.indicator.style.left = "50%";
+      tracker.ui.indicator.style.background = "rgb(165, 185, 175)";
+      tracker.ui.indicator.style.boxShadow = "0 0 10px rgb(165, 185, 175), 0 0 18px rgba(165, 185, 175, 0.5)";
+    }
+    if (tracker.ui.compactText) {
+      tracker.ui.compactText.textContent = "Waiting data...";
+      tracker.ui.compactText.style.color = "rgba(255, 255, 255, 0.5)";
+    }
+    return;
+  }
 
-  const first = state.priceHistory[0];
-  const last = state.priceHistory[state.priceHistory.length - 1];
+  const first = tracker.priceHistory[0];
+  const last = tracker.priceHistory[tracker.priceHistory.length - 1];
   const change = ((last - first) / first) * 100;
 
-  const sensitivity = getSensitivity(state.priceHistory.length);
+  const sensitivity = getSensitivity(tracker.priceHistory.length);
   const normalized = Math.max(0, Math.min(100, 50 + change * sensitivity));
 
   const absChange = Math.abs(change);
-  const { state: marketState, color } = getMarketState(absChange);
+  const { state: marketState, color, emoji } = getMarketState(absChange);
 
   const distance = Math.abs(50 - normalized);
   const intensity = distance / 50;
   const indicatorColor = getIndicatorColor(intensity);
 
-  state.ui.indicator.style.left = `${normalized}%`;
-  state.ui.indicator.style.background = indicatorColor;
-  state.ui.indicator.style.boxShadow = `0 0 10px ${indicatorColor}, 0 0 18px ${indicatorColor}80`;
+  tracker.ui.indicator.style.left = `${normalized}%`;
+  tracker.ui.indicator.style.background = indicatorColor;
+  tracker.ui.indicator.style.boxShadow = `0 0 10px ${indicatorColor}, 0 0 18px ${indicatorColor}80`;
 
-  state.ui.changeValueSpan.style.color = indicatorColor;
-  state.ui.changeValueSpan.textContent = `${change > 0 ? "+" : ""}${change.toFixed(4)}%`;
-
-  state.ui.marketStateDiv.style.color = color;
-  state.ui.marketStateDiv.textContent = marketState;
+  if (!tracker.isCompact) {
+    tracker.ui.changeValueSpan.style.color = indicatorColor;
+    tracker.ui.changeValueSpan.textContent = `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
+    tracker.ui.marketStateDiv.style.color = color;
+    tracker.ui.marketStateDiv.textContent = marketState;
+  }
+  
+  if (tracker.isCompact && tracker.ui.compactText) {
+    const changeText = `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
+    tracker.ui.compactText.textContent = `${changeText} ${emoji}`;
+    tracker.ui.compactText.style.color = indicatorColor;
+    tracker.ui.compactText.style.fontWeight = "bold";
+    tracker.ui.compactText.style.display = "block";
+  } else if (tracker.ui.compactText) {
+    tracker.ui.compactText.style.display = "none";
+  }
 }
 
 // ===============================
-// PRICE TRACKING (ONE VERSION)
+// PRICE TRACKING
 // ===============================
-async function trackPrice() {
-  let symbol = document
-    .getElementById("symbol")
-    .value.trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-
-  if (!symbol) return;
-  if (!symbol.endsWith("USDT")) symbol += "USDT";
-
-  const price = await getPrice(symbol);
-  if (!price) return;
-
-  updatePriceHistory(price);
-
-  if (state.lastPrice === null) {
-    state.lastPrice = price;
-    updateProgressLine();
+async function trackCurrentPrice() {
+  const symbol = getSymbolFromInput();
+  if (!symbol) {
+    if (!currentSymbol) {
+      const defaultTracker = getOrCreateTracker('DEFAULT');
+      if (!defaultTracker.ui.container) {
+        currentSymbol = 'DEFAULT';
+        initProgressLine(defaultTracker);
+      }
+    }
     return;
   }
-
-  const change = ((price - state.lastPrice) / state.lastPrice) * 100;
-
-  if (Math.abs(change) >= 0.01) {
-    state.lastPrice = price;
+  
+  if (symbol !== currentSymbol) {
+    if (currentSymbol) {
+      cleanupOldTracker(currentSymbol);
+    }
+    currentSymbol = symbol;
   }
-
-  updateProgressLine();
+  
+  const tracker = getOrCreateTracker(symbol);
+  
+  if (!tracker.ui.container) {
+    initProgressLine(tracker);
+  }
+  
+  const price = await getPrice(symbol);
+  if (!price) {
+    updateProgressLine(tracker);
+    return;
+  }
+  
+  updatePriceHistory(tracker, price);
+  
+  if (tracker.lastPrice === null) {
+    tracker.lastPrice = price;
+  }
+  
+  updateProgressLine(tracker);
 }
 
 // ===============================
-// EVENTS
+// МИТТЄВЕ ОНОВЛЕННЯ
 // ===============================
-document.addEventListener("DOMContentLoaded", () => {
-  initProgressLine();
-  state.ui.progressContainer.classList.add("compact");
-});
-
-document.addEventListener("click", (e) => {
-  if (e.target.closest("#progressLine")) {
-    state.ui.progressContainer.classList.toggle("compact");
+function refreshPriceTracker() {
+  const symbol = getSymbolFromInput();
+  if (!symbol) return;
+  
+  if (symbol !== currentSymbol) {
+    if (currentSymbol) {
+      cleanupOldTracker(currentSymbol);
+    }
+    currentSymbol = symbol;
   }
-});
-
-document.getElementById("symbol").addEventListener("change", () => {
-  state.lastPrice = null;
-});
+  
+  const tracker = getOrCreateTracker(symbol);
+  
+  if (!tracker.ui.container) {
+    initProgressLine(tracker);
+  }
+  
+  trackCurrentPrice();
+}
 
 // ===============================
-// INTERVAL
+// EVENT HANDLERS
 // ===============================
-setInterval(throttle(trackPrice, 1500), 10000);
+function setupEventListeners() {
+  const symbolInput = document.getElementById("symbol");
+  if (symbolInput) {
+    symbolInput.addEventListener("change", () => {
+      refreshPriceTracker();
+    });
+    
+    symbolInput.addEventListener("input", () => {
+      clearTimeout(window.symbolChangeTimeout);
+      window.symbolChangeTimeout = setTimeout(() => {
+        refreshPriceTracker();
+      }, 500);
+    });
+  }
+}
+
+// ===============================
+// CSS STYLES
+// ===============================
+function addProgressLineStyles() {
+  if (document.getElementById('progress-line-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'progress-line-styles';
+  style.textContent = `
+    .progress-line-container {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 11px 0;
+      padding: 10px;
+      background: rgba(30, 35, 45, 0.4);
+      border-radius: 12px;
+      border: 1px solid rgba(157, 189, 178, 0.2);
+      font-family: 'Orbitron', monospace;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .progress-line-container:hover {
+      opacity: 0.85;
+      border-color: rgba(157, 189, 178, 0.4);
+    }
+    
+    .progress-line-container.compact {
+      height: 30px !important;
+      min-height: 30px !important;
+      padding: 5px 10px !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-radius: 6px !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      overflow: hidden !important;
+      position: relative !important;
+      cursor: pointer !important;
+    }
+    
+    .progress-line-container.compact .progress-line-header,
+    .progress-line-container.compact .progress-line-labels {
+      display: none !important;
+    }
+    
+    .progress-line-container.compact .progress-line-bar {
+      height: 20px !important;
+      margin-top: 5px !important;
+    }
+    
+    .progress-line-container:not(.compact) .progress-line-compact-text {
+      display: none !important;
+    }
+    
+    .progress-line-bar {
+      position: relative;
+      width: 100%;
+      height: 26px;
+    background: linear-gradient(to right, 
+        #2a2f42 0%,        /* Темний тон основи */
+        #3a415a 25%,       /* Дещо світліший */
+        #4a5373 50%,       /* Найсвітліший середній тон */
+        #3a415a 75%,       /* Дещо світліший (симетрично) */
+        #2a2f42 100%       /* Темний тон основи */
+        );
+      border-radius: 13px;
+      overflow: visible;
+      border: 2px solid rgba(157, 189, 178, 0.15);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .progress-line-indicator {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px;
+      height: 30px;
+      background: rgb(165, 185, 175);
+      box-shadow: 0 0 10px rgb(165, 185, 175), 0 0 18px rgba(165, 185, 175, 0.5);
+      border-radius: 3px;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      transition: all 1.6s ease;
+      z-index: 10;
+    }
+    
+    .progress-line-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .progress-line-change {
+      font-size: 12px;
+      color: #a8b5c0;
+      font-family: 'Orbitron', monospace;
+    }
+    
+    .progress-line-change-value {
+      font-weight: bold;
+      font-size: 14px;
+      transition: color 1.3s ease;
+      margin-left: 4px;
+    }
+    
+    .progress-line-market-state {
+      font-size: 11px;
+      font-weight: bold;
+      font-family: 'Orbitron', monospace;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: all 1.3s ease;
+    }
+    
+    .progress-line-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #8a95a0;
+      margin-top: 6px;
+      font-family: 'Orbitron', monospace;
+    }
+  `;
+  
+  document.head.appendChild(style);
+}
+
+// ===============================
+// INITIALIZATION
+// ===============================
+function initPriceTracker() {
+  if (isInitialized) return;
+  
+  isInitialized = true;
+  
+  addProgressLineStyles();
+  
+  const defaultTracker = getOrCreateTracker('DEFAULT');
+  if (!defaultTracker.ui.container) {
+    currentSymbol = 'DEFAULT';
+    initProgressLine(defaultTracker);
+  }
+  
+  setupEventListeners();
+  
+  const throttledTrack = throttle(trackCurrentPrice, 1500);
+  
+  if (trackerInterval) {
+    clearInterval(trackerInterval);
+  }
+  
+  trackerInterval = setInterval(throttledTrack, 10000);
+  
+  setTimeout(() => {
+    throttledTrack();
+  }, 500);
+}
+
+// ===============================
+// START
+// ===============================
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPriceTracker();
+  });
+} else {
+  setTimeout(initPriceTracker, 100);
+}
+
+// ===============================
+// GLOBAL EXPORTS
+// ===============================
+window.initPriceTracker = initPriceTracker;
+window.refreshPriceTracker = refreshPriceTracker;
+window.forceUpdatePriceTracker = refreshPriceTracker;
+
+window.cleanupPriceTracker = function() {
+  if (trackerInterval) {
+    clearInterval(trackerInterval);
+    trackerInterval = null;
+  }
+  
+  for (const [symbol, tracker] of priceTrackers) {
+    if (tracker.ui.container) {
+      tracker.ui.container.remove();
+    }
+  }
+  priceTrackers.clear();
+  currentSymbol = '';
+  isInitialized = false;
+};

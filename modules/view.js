@@ -1,4 +1,3 @@
-
 let animationProgress = 0;
 let animationFrame = null;
 let colorShiftTime = 0;
@@ -8,35 +7,23 @@ let isMinimized = false;
 let cachedGrid = null;
 let cachedBackground = null;
 
-// ===============================
-// ОСНОВНА ФУНКЦІЯ МАЛЮВАННЯ
-// ===============================
 function drawMiniChart(prices) {
   const canvas = document.getElementById("miniChart");
-  if (!canvas) return;
-
-  if (!prices || prices.length < 2) {
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "16px Arial";
-    ctx.fillStyle = "#666";
-    ctx.textAlign = "center";
-    ctx.fillText("Очікування даних...", canvas.width/2, canvas.height/2);
-    return;
-  }
+  if (!canvas || !prices || prices.length < 2) return;
 
   const ctx = canvas.getContext("2d");
 
-  // Retina display
+  // Retina
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Скидаємо кеш при зміні розміру
-  cachedGrid = null;
-  cachedBackground = null;
+// ❗ Скидаємо кеш, бо розмір canvas змінився
+cachedGrid = null;
+cachedBackground = null;
+
 
   const width = rect.width;
   const height = rect.height;
@@ -109,7 +96,7 @@ function drawMiniChart(prices) {
   }
 
   // -----------------------------
-  // КОЛІР СЕГМЕНТА
+  // КОЛІР СЕГМЕНТА (оптимізовано)
   // -----------------------------
   function getSegmentColor(prev, curr, shift) {
     const t = (shift * 0.055) % 360;
@@ -121,7 +108,7 @@ function drawMiniChart(prices) {
   }
 
   // -----------------------------
-  // ГРАДІЄНТ
+  // ГРАДІЄНТ (спрощений)
   // -----------------------------
   function createMovingGradient(x1, y1, x2, y2, direction) {
     const g = ctx.createLinearGradient(x1, y1, x2, y2);
@@ -145,10 +132,9 @@ function drawMiniChart(prices) {
   }
 
   // -----------------------------
-  // АНІМАЦІЯ
+  // Анімація
   // -----------------------------
   function animate() {
-    ctx.clearRect(0, 0, width, height);
     ctx.drawImage(cachedBackground, 0, 0);
     ctx.drawImage(cachedGrid, 0, 0);
 
@@ -215,44 +201,53 @@ function drawMiniChart(prices) {
       ctx.fill();
     }
 
-    // Бокс з ціною
-    const last = prices[prices.length - 1];
-    const txt = last.toFixed(4);
+// Бокс з ціною
+const last = prices[prices.length - 1];
+const txt = last.toFixed(4);
 
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.font = `${fontSize}px ${fontFamily}`;
-    const textWidth = ctx.measureText(txt).width;
-    const boxWidth = textWidth + textPadding * 10;
-    const boxHeight = fontSize + textPadding * 2;
+// 🔥 FIX: повертаємо нормальне вирівнювання
+ctx.textAlign = "left";
+ctx.textBaseline = "middle";
 
-    ctx.fillStyle = "rgba(5, 8, 16, 0.7)";
-    ctx.fillRect(5, 5, boxWidth, boxHeight);
-    ctx.fillStyle = "#fff";
-    ctx.fillText(txt, 5 + textPadding, 5 + boxHeight / 2);
+ctx.font = `${fontSize}px ${fontFamily}`;
+const textWidth = ctx.measureText(txt).width;
+
+const boxWidth = textWidth + textPadding * 10;
+const boxHeight = fontSize + textPadding * 2;
+
+ctx.fillStyle = "rgba(5, 8, 16, 0.7)";
+ctx.fillRect(5, 5, boxWidth, boxHeight);
+
+ctx.fillStyle = "#fff";
+ctx.fillText(txt, 5 + textPadding, 5 + boxHeight / 2);
 
     animationFrame = requestAnimationFrame(animate);
   }
 
-  // Клік для перемикання режиму
-  canvas.onclick = () => {
-    isMinimized = !isMinimized;
-  };
+  canvas.onclick = () => (isMinimized = !isMinimized);
 
-  // Запуск анімації
   if (animationFrame) cancelAnimationFrame(animationFrame);
+
   animate();
 }
 
-// ===============================
-// ЗАВАНТАЖЕННЯ ДАНИХ З BINANCE
-// ===============================
-async function loadMiniChart(symbol) {
-  if (!symbol || symbol.trim() === "") {
-    return;
-  }
 
-  symbol = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+
+
+
+
+
+
+
+
+
+// Завантаження даних з Binance
+async function loadMiniChart(symbol) {
+  symbol = symbol
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 
   if (!symbol.endsWith("USDT")) {
     symbol = symbol + "USDT";
@@ -263,113 +258,16 @@ async function loadMiniChart(symbol) {
       `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=2h&limit=300`
     );
 
-    if (!resp.ok) {
-      throw new Error(`HTTP помилка: ${resp.status}`);
-    }
-
     const data = await resp.json();
 
-    if (!Array.isArray(data) || data.length < 2) {
-      return;
-    }
+    if (!Array.isArray(data)) return;
 
     const closes = data.map((c) => parseFloat(c[4]));
     drawMiniChart(closes);
   } catch (e) {
     console.error("Помилка при завантаженні графіка:", e);
-    
-    const canvas = document.getElementById("miniChart");
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = "14px Arial";
-      ctx.fillStyle = "#ff6b6b";
-      ctx.textAlign = "center";
-      ctx.fillText("Помилка завантаження даних", canvas.width/2, canvas.height/2);
-    }
   }
 }
 
-// ===============================
-// ІНІЦІАЛІЗАЦІЯ
-// ===============================
-function initMiniChart() {
-  const canvas = document.getElementById("miniChart");
-  
-  if (!canvas) {
-    const newCanvas = document.createElement('canvas');
-    newCanvas.id = 'miniChart';
-    newCanvas.width = 800;
-    newCanvas.height = 400;
-    newCanvas.style.width = '100%';
-    newCanvas.style.maxWidth = '800px';
-    newCanvas.style.height = '400px';
-    newCanvas.style.border = '1px solid #333';
-    newCanvas.style.borderRadius = '8px';
-    newCanvas.style.margin = '20px auto';
-    newCanvas.style.display = 'block';
-    newCanvas.style.background = '#080c1a';
-    newCanvas.style.cursor = 'pointer';
-    
-    // Вставляємо після input
-    const input = document.getElementById("symbol");
-    if (input) {
-      input.parentNode.insertBefore(newCanvas, input.nextSibling);
-    } else {
-      document.body.prepend(newCanvas);
-    }
-  }
-  
-  // Експортуємо функцію
-  window.loadMiniChart = loadMiniChart;
-  
-  // Завантажуємо монету з input при ініціалізації
-  const symbolInput = document.getElementById("symbol");
-  if (symbolInput && symbolInput.value) {
-    loadMiniChart(symbolInput.value);
-  }
-}
-
-// ===============================
-// ВІДСЛІДКОВУВАННЯ ЗМІНИ INPUT
-// ===============================
-
-// Функція для оновлення графіка при зміні символу
-function updateChartOnSymbolChange() {
-  const inputEl = document.getElementById("symbol");
-  if (inputEl && window.loadMiniChart) {
-    const symbol = inputEl.value.trim();
-    if (symbol) {
-      loadMiniChart(symbol);
-    }
-  }
-}
-
-// Відслідковуємо зміни в input
-function setupSymbolInputListener() {
-  const inputEl = document.getElementById("symbol");
-  if (!inputEl) return;
-  
-  // Оновлюємо графік при зміні значення
-  inputEl.addEventListener('change', updateChartOnSymbolChange);
-  inputEl.addEventListener('blur', updateChartOnSymbolChange);
-}
-
-// ===============================
-// ЗАПУСК ПРИ ЗАВАНТАЖЕННІ
-// ===============================
-document.addEventListener('DOMContentLoaded', () => {
-  initMiniChart();
-  setupSymbolInputListener();
-  
-  // Завантажуємо графік для монети з input
-  const symbolInput = document.getElementById("symbol");
-  if (symbolInput && symbolInput.value) {
-    setTimeout(() => {
-      loadMiniChart(symbolInput.value);
-    }, 100);
-  }
-});
-
-// Експортуємо функції для використання в інших файлах
-window.updateChartOnSymbolChange = updateChartOnSymbolChange;
+// Експорт функції
+window.loadMiniChart = loadMiniChart;
