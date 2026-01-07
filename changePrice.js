@@ -54,7 +54,7 @@ function getOrCreateTracker(symbol) {
     priceTrackers.set(symbol, {
       priceHistory: [],
       lastPrice: null,
-      isCompact: true,
+      isCompact: false,
       lastUpdateTime: 0,
       ui: {
         container: null,
@@ -362,8 +362,8 @@ function addProgressLineStyles() {
     .progress-line-container {
       cursor: pointer;
       transition: all 0.3s ease;
-      margin: 11px 0;
-      padding: 10px;
+      margin: 7px 0;
+      padding: 5px;
       background: rgba(30, 35, 45, 0.4);
       border-radius: 12px;
       border: 1px solid rgba(157, 189, 178, 0.2);
@@ -378,8 +378,8 @@ function addProgressLineStyles() {
     }
     
     .progress-line-container.compact {
-      height: 30px !important;
-      min-height: 30px !important;
+      height: 25px !important;
+      min-height: 25px !important;
       padding: 5px 10px !important;
       background: rgba(255, 255, 255, 0.08) !important;
       border-radius: 6px !important;
@@ -392,11 +392,6 @@ function addProgressLineStyles() {
     .progress-line-container.compact .progress-line-header,
     .progress-line-container.compact .progress-line-labels {
       display: none !important;
-    }
-    
-    .progress-line-container.compact .progress-line-bar {
-      height: 20px !important;
-      margin-top: 5px !important;
     }
     
     .progress-line-container:not(.compact) .progress-line-compact-text {
@@ -439,7 +434,7 @@ function addProgressLineStyles() {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     
     .progress-line-change {
@@ -450,9 +445,9 @@ function addProgressLineStyles() {
     
     .progress-line-change-value {
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
       transition: color 1.3s ease;
-      margin-left: 4px;
+      margin-left: 6px;
     }
     
     .progress-line-market-state {

@@ -192,8 +192,7 @@ computeMarketStrength(
   data,
   THRESHOLDS,
   activeScenarios,
-  compositeActive,
-  box // ← передаємо target
+  compositeActive
 );
 // =======================
 // RETURN

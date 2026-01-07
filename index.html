@@ -6,6 +6,7 @@
     <title>Analyzer</title>
     <link rel="icon" type="image/png" href="analyzer.png">
     <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="fib-chart.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@400;700;900&family=Teko:wght@400;600;700&display=swap" rel="stylesheet">
@@ -96,7 +97,7 @@
 </a>
 </div>
       <div class="wrapCanvas">
-        <canvas id="miniChart" width="800" height="80"></canvas>
+        <canvas id="miniChart" width="800" height="100"></canvas>
 
         <label class="symbolLabel">
           <input type="text" id="symbol" value="eth" autocomplete="off" />
@@ -116,26 +117,39 @@
 </div>
 
       <div id="output" class="output"></div>
+      
      <div id="priceMessages"></div> 
 
-     <div class="wrapCanvas">
-
+     <div class="wrapCanvasFib">
 <div id="fibWrapper">
+  
     <canvas id="fibChart"></canvas>
+
+   <div id="outputFibonacci" class="fib-output-container">
+
+    <div class="fib-output-section short-section">
+        <div class="short-grid"></div>
+    </div>
+
+    <div class="fib-output-section long-section">
+        <div class="long-grid"></div>
+    </div>
+
+    <div class="fib-output-section mini-section">
+        <div class="mini-grid"></div>
+    </div>
+
 </div>
 </div>
  <footer>
-    <div>v.018 global rebuild</div>
+    <div>v.019 global rebuild Golden Pocket</div>
     <span>designed by tromp86</span>
 </footer>
     </div>
 
-<script src="verticalFib.js"></script>
-<script>
-  loadFibChartFromInput();
-</script>
     <script type="module" src="main.js"></script>
     <script src="changePrice.js"></script>
     <script src="view.js"></script>
+    <script type="module" src="./fib-chart.js"></script>
   </body>
 </html>

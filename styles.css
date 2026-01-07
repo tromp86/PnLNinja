@@ -35,7 +35,7 @@ h3 {
   color: #9dbdb2;
   text-shadow: 0 2px 8px rgba(0, 123, 82, 0.193);
   transition: all 1.4s ease;
-  font-family: 'Orbitron', sans-serif; /* Футуристичний шрифт */
+  font-family: 'Orbitron', sans-serif;
   font-weight: 700;
 }
 h3:hover {
@@ -59,45 +59,19 @@ h3:hover {
   box-sizing: border-box;
 }
 
-.wrapCanvas:hover {
-  background: #161b22;
-  border-color: rgba(255, 255, 255, 0.12);
-  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); */
-}
 
-.wrapCanvas:active {
-  transform: translateY(5px);
-  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); */
-}
 input,
 .suggestions {
   cursor: pointer;
 }
 /* Canvas */
-#miniChart {
-  width: 100%;
-  display: block;
-}
-
 #fibWrapper {
-    width: 1000px;        
+    width: 1200px;        
     max-width: 100%;     
     margin: 0 auto;      
 }
+ 
 
-#fibChart {
-    width: 100%;
-    height: 90px;    
-    display: block;
-    border-radius: 6px;
-    transition: height 0.25s ease;
-}
-
-/* MINIMIZED режим */
-#fibChart.minimized {
-    overflow: hidden;
-    height: 40px;
-}
 
 
 /* Label + input */
@@ -115,7 +89,7 @@ input,
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: #11161d;
   color: #fff;
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
 }
 
