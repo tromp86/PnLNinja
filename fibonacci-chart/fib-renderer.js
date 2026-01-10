@@ -58,11 +58,12 @@ function renderErrorMessage(ctx, width, height, message) {
 }
 
 // ===============================
-// Мінімізований режим
+// Мінімізований режим — Відображення поточного %
 // ===============================
 function renderMinimizedMode(ctx, width, height, fibData) {
     ctx.clearRect(0, 0, width, height);
 
+    // Градієнтний фон
     const grad = ctx.createLinearGradient(0, 0, width, height);
     grad.addColorStop(0, "#05070c");
     grad.addColorStop(0.5, "#0b111b");
@@ -70,29 +71,35 @@ function renderMinimizedMode(ctx, width, height, fibData) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+    ctx.fillStyle = "rgba(0, 70, 76, 0.1)";
     ctx.fillRect(0, 0, width, height);
 
-    if (!fibData.activeZone) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        ctx.font = "bold 18px 'Orbitron', monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("No zone", width / 2, height / 2);
-        return;
-    }
+    // Розрахунок поточного відсотка (Last price relative to range)
+    // Формула: ((last - low) / (high - low)) * 100
+    const currentPercent = safeDiv(fibData.last - fibData.swingLow, fibData.range) * 100;
+    
+    // Форматування тексту (наприклад: 79.3%)
+    const txt = `${currentPercent.toFixed(1)}%`;
 
-    const txt = `${(fibData.activeZone.left.lvl * 100).toFixed(1)}% → ${(fibData.activeZone.right.lvl * 100).toFixed(1)}%`;
-
-    ctx.font = "bold 18px 'Orbitron', monospace";
+    // Стилізація тексту
+    ctx.font = "bold 22px 'Orbitron', monospace"; 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(230, 240, 255, 0.92)";
+    ctx.fillStyle = "rgba(230, 240, 255, 0.95)";
 
     ctx.save();
-    ctx.scale(1, 1.4);
-    ctx.fillText(txt, width / 2, (height / 2) / 1.4);
+    ctx.scale(1, 1.2);
+    ctx.fillText(txt, width / 2, (height / 2) / 1.2);
     ctx.restore();
+
+
+const isMobile = window.innerWidth <= 768;
+ctx.font = "9px 'SF Pro Text', sans-serif";
+ctx.fillStyle = "rgba(230, 240, 255, 0.66)";
+
+const xPos = isMobile ? (width / 2.35) - 60 : (width / 2.35);
+
+ctx.fillText("CURRENT LEVEL", xPos, height - 20);
 }
 
 // ===============================
@@ -115,14 +122,14 @@ function renderFullMode(ctx, width, height, fibData) {
 
     // Фон
     const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-    bgGrad.addColorStop(0, "#03050a");
-    bgGrad.addColorStop(0.35, "#080c14");
-    bgGrad.addColorStop(0.7, "#050812");
-    bgGrad.addColorStop(1, "#020307");
+    bgGrad.addColorStop(0, "#111415ff");
+    bgGrad.addColorStop(0.35, "#0e1314ff");
+    bgGrad.addColorStop(0.7, "#0c1314ff");
+    bgGrad.addColorStop(1, "#091214ff");
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+    ctx.fillStyle = "rgba(70, 129, 124, 0.04)";
     ctx.fillRect(0, 0, width, height);
 
     // Заголовок
@@ -158,7 +165,7 @@ function renderFullMode(ctx, width, height, fibData) {
     if (activeZone) {
         const txt = `${(activeZone.left.lvl * 100).toFixed(1)}% → ${(activeZone.right.lvl * 100).toFixed(1)}%`;
         ctx.fillStyle = "rgba(220, 228, 245, 0.82)";
-        ctx.font = "13px 'SF Pro Text', sans-serif";
+        ctx.font = "12px 'SF Pro Text', sans-serif";
         ctx.textAlign = "right";
         ctx.fillText(txt, width - 12, height - 10);
         ctx.textAlign = "left";
@@ -185,11 +192,11 @@ function renderActiveZone(ctx, width, height, fibData, scaleX) {
     const b = clampRGB(255 - t * 15);
 
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.10)`;
-    ctx.fillRect(x1, 22, x2 - x1, height - 42);
+    ctx.fillRect(x1, 22, x2 - x1, height - 22);
 
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.45)`;
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.05)`;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x1, 22, x2 - x1, height - 42);
+    ctx.strokeRect(x1, 22, x2 - x1, height - 22);
 
     ctx.fillStyle = "rgba(220, 230, 250, 0.85)";
     ctx.font = "11px 'SF Pro Text', sans-serif";

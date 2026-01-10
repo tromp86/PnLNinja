@@ -6,75 +6,25 @@
 export const fibMetricInfo = {
 
     // ===============================
-    // Impulse Direction
-    // ===============================
-    impulseDirection: {
-        bullish: {
-            label: "Bullish Impulse",
-            short: "Buy-side control",
-            long: "Ціна формує вищі мінімуми та пробиває ключові рівні без глибоких відкатів. Попит домінує, структура ринку зберігається бичачою."
-        },
-        bearish: {
-            label: "Bearish Impulse",
-            short: "Sell-side control",
-            long: "Ціна формує нижчі максимуми та слабкі корекції. Пропозиція переважає, ринок перебуває під тиском продавців."
-        }
-    },
-
-    // ===============================
     // Retracement Depth Classification
     // ===============================
     retracement: {
         shallow: {
             label: "Shallow Retracement (<38%)",
-            short: "Strong trend continuation",
-            long: "Корекція обмежується рівнями до 38%. Це свідчить про агресивний тренд, де ринок не дає глибоких можливостей для входу."
+            short: "Strong trend continuation (Сильне продовження тренду)"
         },
         normal: {
             label: "Normal Retracement (38–61%)",
-            short: "Balanced pullback",
-            long: "Корекція в зоні 38–61% від імпульсу. Типова поведінка здорового тренду з контрольованим ризиком."
+            short: "Balanced pullback (Збалансований відкат)"
         },
         deep: {
             label: "Deep Retracement (61–100%)",
-            short: "Trend vulnerability",
-            long: "Глибока корекція, що свідчить про ослаблення імпульсу. Ймовірність продовження тренду знижується."
+            short: "Trend vulnerability (Вразливість тренду)"
         },
         overextended: {
             label: "Structure Break (>100%)",
-            short: "Trend invalidation",
-            long: "Ціна перекриває весь попередній імпульс. Трендова структура зламана, сценарій продовження неактуальний."
+            short: "Trend invalidation (Скасування тренду)"
         }
-    },
-
-    // ===============================
-    // Golden Pocket Analysis
-    // ===============================
-    goldenPocket: {
-        inside: {
-            label: "Inside Golden Pocket (0.618–0.65)",
-            short: "Optimal reaction zone",
-            long: "Ціна знаходиться в зоні максимальної ймовірності реакції. Часто використовується для продовження тренду при підтвердженні об’ємом або структурою."
-        },
-        near: {
-            label: "Near Golden Pocket",
-            short: "Conditional setup",
-            long: "Ціна наближається до Golden Pocket, але ще не в ключовій зоні. Потрібне додаткове підтвердження."
-        },
-        outside: {
-            label: "Outside Golden Pocket",
-            short: "Low structural relevance",
-            long: "Ціна поза зоною Golden Pocket. Фібоначчі-підтримка слабка або відсутня."
-        }
-    },
-
-    // ===============================
-    // Impulse Quality
-    // ===============================
-    impulseQuality: {
-        label: "Impulse Quality",
-        short: "Structure & efficiency",
-        long: "Оцінює чистоту руху: мінімальні відкатні бари, стабільний напрямок, відсутність хаотичної волатильності."
     },
 
     // ===============================
@@ -82,8 +32,7 @@ export const fibMetricInfo = {
     // ===============================
     impulseStrength: {
         label: "Impulse Strength",
-        short: "Directional momentum",
-        long: "Порівнює поточний імпульс із попередніми рухами. Високе значення означає домінування однієї сторони ринку."
+        short: "Directional momentum (Сила імпульсу)"
     },
 
     // ===============================
@@ -91,8 +40,7 @@ export const fibMetricInfo = {
     // ===============================
     volumeStrength: {
         label: "Volume Strength",
-        short: "Participation level",
-        long: "Показує, наскільки рух підтриманий торговим об’ємом. Сильний імпульс без об’єму вважається нестійким."
+        short: "Participation level (Рівень об'єму)"
     },
 
     // ===============================
@@ -100,17 +48,15 @@ export const fibMetricInfo = {
     // ===============================
     correctionDepth: {
         label: "Correction Depth",
-        short: "Pullback magnitude",
-        long: "Вимірює відсоток корекції відносно всього імпульсу. Використовується для оцінки ризику продовження руху."
+        short: "Pullback magnitude (Глибина корекції)"
     },
 
     // ===============================
-    // Impulse Duration
+    // Impulse Duration (Bars)
     // ===============================
     impulseBars: {
         label: "Impulse Duration",
-        short: "Impulse development speed",
-        long: "Кількість барів, за які сформувався імпульс. Короткі імпульси — агресивні, довші — контрольовані та стабільні."
+        short: "Impulse Velocity (Швидкість імпульсу)"
     },
 
     // ===============================
@@ -118,7 +64,40 @@ export const fibMetricInfo = {
     // ===============================
     volumeClimax: {
         label: "Volume Climax",
-        short: "Decision point",
-        long: "Різкий сплеск об’єму. У тренді — часто сигнал кульмінації, у консолідації — можливий початок імпульсу."
+        short: "Decision point"
+    },
+
+    // ===============================
+    // NEW PRO METRICS
+    // ===============================
+
+    // 1. Impulse Velocity
+    impulseVelocity: {
+        label: "Impulse Velocity",
+        short: "Movement speed (Швидкість імпульсу)"
+    },
+
+    // 2. ATR-Normalized Distance
+    atrNormalizedDistance: {
+        label: "ATR Distance",
+        short: "Volatility-adjusted range (Діапазон з урахуванням ATR)"
+    },
+
+    // 3. Impulse Exhaustion
+    impulseExhaustion: {
+        label: "Impulse Exhaustion",
+        short: "Fatigue level (Рівень втоми імпульсу)"
+    },
+
+    // 4. Impulse Maturity
+    impulseMaturity: {
+        label: "Impulse Maturity",
+        short: "Lifecycle phase (Фаза життєвого циклу імпульсу)"
+    },
+
+    // 5. Impulse Quality (NEW)
+    impulseQualityPro: {
+        label: "Impulse Quality (Pro)",
+        short: "Velocity + Volume + Structure (Комплексна якість імпульсу)"
     }
 };

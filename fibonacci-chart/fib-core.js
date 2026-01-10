@@ -31,7 +31,7 @@ export function calculateFibonacciData(highs, lows, closes, volumes) {
     // 2. Напрямок імпульсу
     const isBullishImpulse = indexLow < indexHigh;
 
-    // 3. Корекція (залежно від напрямку)
+    // 3. Корекція
     const correctionDepth = isBullishImpulse
         ? safeDiv(last - swingLow, range)
         : safeDiv(swingHigh - last, range);
@@ -42,17 +42,17 @@ export function calculateFibonacciData(highs, lows, closes, volumes) {
     // 5. Сила об'єму
     const volumeStrength = calculateVolumeStrength(volumes, indexHigh, indexLow);
 
-    // 6. Розширені рівні Фібоначчі
+    // 6. Рівні Фібоначчі
     const fibLevels = calculateFibLevels(swingLow, range);
 
     // 7. Активна зона
     const activeZone = findActiveZone(last, fibLevels);
 
     // 8. Golden Pocket
-    const goldenPocket = {
-        from: swingLow + range * 0.618,
-        to: swingLow + range * 0.65
-    };
+    // const goldenPocket = {
+    //     from: swingLow + range * 0.618,
+    //     to: swingLow + range * 0.65
+    // };
 
     // 9. Тип корекції
     let retracementType = "unknown";
@@ -61,21 +61,52 @@ export function calculateFibonacciData(highs, lows, closes, volumes) {
     else if (correctionDepth <= 1) retracementType = "deep";
     else retracementType = "overextended";
 
-    // 10. Тривалість імпульсу
+    // ===============================
+    // 10. Покращена тривалість імпульсу
+    // ===============================
+    const priceDistance = Math.abs(swingHigh - swingLow);
     const impulseBars = Math.abs(indexHigh - indexLow);
+    const atr = calculateATR(highs, lows, closes) || 1;
 
+    // Швидкість імпульсу
+    const impulseVelocity = priceDistance / Math.max(impulseBars, 1);
+
+    // ATR-нормалізована довжина
+    const atrNormalizedDistance = priceDistance / atr;
+
+    // ===============================
     // 11. Volume Climax
+    // ===============================
     const recentVolumes = volumes.slice(indexLow, indexHigh + 1);
     const maxVolume = Math.max(...recentVolumes);
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / Math.max(recentVolumes.length, 1);
     const isVolumeClimax = maxVolume > avgVolume * 2.5;
 
-    // 12. Якість імпульсу
-    const impulseQuality = clamp01(
-        (impulseStrength / 100) * 0.5 +
-        volumeStrength * 0.3 +
-        (1 - correctionDepth) * 0.2
-    );
+    // ===============================
+    // 12. Нові імпульсні метрики
+    // ===============================
+
+    // Exhaustion — втома імпульсу
+    const exhaustionRaw =
+        (impulseBars / 12) *
+        (1 / Math.max(impulseVelocity, 0.1)) *
+        (atrNormalizedDistance > 4 ? 1.2 : 1);
+
+    const impulseExhaustion = clamp01(exhaustionRaw);
+
+    // Maturity — фаза імпульсу
+    const maturity =
+        0.6 * Math.min(1, impulseBars / 10) +
+        0.4 * (1 - Math.min(1, impulseVelocity / 3));
+
+    const impulseMaturity = clamp01(maturity);
+
+    // Quality — загальна якість імпульсу
+    const impulseQuality =
+        0.35 * Math.min(1, impulseVelocity / 2) +
+        0.25 * (1 - impulseExhaustion) +
+        0.20 * (1 - Math.abs(impulseMaturity - 0.5) * 2) +
+        0.20 * Math.min(1, volumeStrength / 3);
 
     return {
         isValid: true,
@@ -89,11 +120,14 @@ export function calculateFibonacciData(highs, lows, closes, volumes) {
         fibLevels,
         activeZone,
         isBullishImpulse,
-        goldenPocket,
         retracementType,
         impulseBars,
-        isVolumeClimax,
-        impulseQuality
+        impulseVelocity,
+        atrNormalizedDistance,
+        impulseExhaustion,
+        impulseMaturity,
+        impulseQuality,
+        isVolumeClimax
     };
 }
 
@@ -126,35 +160,107 @@ function findLastImpulse(highs, lows) {
 }
 
 // ===============================
-// Розрахунок сили об'єму
+// ATR (14) — для impulse metrics
 // ===============================
-function calculateVolumeStrength(volumes, indexHigh, indexLow) {
-    const recentVolumes = volumes.slice(-80);
-    const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / Math.max(recentVolumes.length, 1);
+function calculateATR(highs, lows, closes, period = 14) {
+    if (highs.length < period + 1) return 0;
 
-    let impulseVolume = avgVolume;
-    let bars = 1;
+    let trs = [];
 
-    if (indexLow !== -1 && indexHigh !== -1) {
-        const start = Math.min(indexLow, indexHigh);
-        const end = Math.max(indexLow, indexHigh);
+    for (let i = highs.length - period; i < highs.length; i++) {
+        const high = highs[i];
+        const low = lows[i];
+        const prevClose = closes[i - 1];
 
-        if (start >= 0 && end < volumes.length && start <= end) {
-            impulseVolume = 0;
-            bars = 0;
-            for (let i = start; i <= end; i++) {
-                impulseVolume += volumes[i] || 0;
-                bars++;
-            }
-            bars = Math.max(bars, 1);
-        }
+        const tr = Math.max(
+            high - low,
+            Math.abs(high - prevClose),
+            Math.abs(low - prevClose)
+        );
+
+        trs.push(tr);
     }
 
-    return safeDiv(impulseVolume, avgVolume * bars);
+    return trs.reduce((a, b) => a + b, 0) / trs.length;
+}
+
+
+// ===============================
+// calculateVolumeStrength
+// ===============================
+function calculateVolumeStrength(volumes, indexHigh, indexLow) {
+  const window = volumes.slice(-80);
+  const avg = window.reduce((a, b) => a + b, 0) / window.length;
+
+  const start = Math.min(indexLow, indexHigh);
+  const end = Math.max(indexLow, indexHigh);
+
+  let impulseVol = 0;
+  let bars = 0;
+
+  for (let i = start; i <= end; i++) {
+    impulseVol += volumes[i] || 0;
+    bars++;
+  }
+
+  bars = Math.max(bars, 1);
+  const avgImpulseVol = impulseVol / bars;
+  let strength = avgImpulseVol / avg;
+
+  // Покращена гнучка система volume climax
+  const maxVol = Math.max(...volumes.slice(start, end + 1));
+  const climaxRatio = avg > 0 ? maxVol / avg : 1;
+  
+  // Градієнтна функція підсилення
+  const climaxBoost = calculateClimaxBoost(climaxRatio);
+  strength *= climaxBoost;
+
+  // 4) Прискорення (експоненційне)
+  strength = Math.pow(strength, 1.18);
+
+  strength = Math.min(strength, 3.0);
+
+  return strength;
+}
+
+// Допоміжна функція для climax boost
+function calculateClimaxBoost(ratio) {
+  // Базова таблиця співвідношень
+  const thresholds = [
+    { min: 5.0, boost: 1.8, label: "super extreme" },
+    { min: 4.5, boost: 1.7, label: "extreme plus" },
+    { min: 4.0, boost: 1.5, label: "extreme" },
+    { min: 3.5, boost: 1.35, label: "very strong" },
+    { min: 3.0, boost: 1.25, label: "strong" },
+    { min: 2.5, boost: 1.15, label: "moderate" },
+    { min: 2.0, boost: 1.08, label: "weak" },
+    { min: 1.5, boost: 1.03, label: "very weak" },
+    { min: 1.2, boost: 1.01, label: "minimal" },
+    { min: 1.0, boost: 1.0, label: "none" }
+  ];
+  
+  // Знаходимо відповідний діапазон
+  for (let i = 0; i < thresholds.length; i++) {
+    if (ratio >= thresholds[i].min) {
+      // Якщо це не останній поріг, робимо плавний перехід до наступного
+      if (i > 0 && ratio < thresholds[i-1].min) {
+        const current = thresholds[i];
+        const next = thresholds[i-1];
+        const range = next.min - current.min;
+        const position = (ratio - current.min) / range;
+        
+        // Лінійна інтерполяція між поточним і наступним значенням
+        return current.boost + (next.boost - current.boost) * position;
+      }
+      return thresholds[i].boost;
+    }
+  }
+  
+  return 1.0;
 }
 
 // ===============================
-// Розширені рівні Фібоначчі
+// Рівні Фібоначчі
 // ===============================
 function calculateFibLevels(swingLow, range) {
     const levels = [0, 0.236, 0.382, 0.5, 0.618, 1, 1.272, 1.618, 2];
@@ -165,7 +271,7 @@ function calculateFibLevels(swingLow, range) {
 }
 
 // ===============================
-// Знайти активну зону
+// Активна зона
 // ===============================
 function findActiveZone(last, fibLevels) {
     for (let i = 0; i < fibLevels.length - 1; i++) {
@@ -175,6 +281,7 @@ function findActiveZone(last, fibLevels) {
     }
     return null;
 }
+
 export async function loadDataFromBinance(symbol) {
     symbol = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!symbol.endsWith("USDT")) symbol = symbol + "USDT";

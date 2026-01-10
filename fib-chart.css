@@ -70,16 +70,10 @@
   letter-spacing: 1px;
 }
 
-.short-text {
-  font-size: 14px;
-  color: #b8c2d6;
-}
-
 .mini-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 7px 7px;
-  
 }
 
 .mini-item {
@@ -87,7 +81,6 @@
   padding: 12px 14px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   min-height: 90px;
   display: flex;
   flex-direction: column;
@@ -95,8 +88,10 @@
 }
 
 .mini-label {
-  font-size: 12px;
-  color: #dce6ff;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+   font-family: 'Orbitron', sans-serif;
+  color: whitesmoke;
   margin-bottom: 4px;
 }
 
@@ -121,47 +116,81 @@
 }
 
 
-/* 1. Far Below — дуже слабка зона */
-.gp-far-below {
-  color: #616f74 !important; /* Дуже світлий бірюзовий/сірий */
-  font-weight: 600;
+/* impulse */
+.impulse-arrows {
+  color: whitesmoke;
+  font-weight: 900;
+  font-size: 1.45em;
+  letter-spacing: 3px;
+  padding-left: 6px;
+}
+/* depth */
+.depth-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* 2. Below — слабкість */
-.gp-below {
-  color: #57777a !important; /* Світлий бірюзовий */
-  font-weight: 600;
+.depth-meter {
+  max-width: 200px;
+  width: 60%;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
 }
 
-/* 3. Near Lower — підходить до GP знизу */
-.gp-near-lower {
-  color: #55888d !important; /* Середньо-світлий бірюзовий */
-  font-weight: 600;
+.depth-level {
+  width: 100%;
+  background: linear-gradient(180deg, #8a8a8a, #bebebe, #f7f7f7);
+  transition: height 0.35s ease;
+  border-radius: 4px;
+}
+/* duration */
+.duration-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* 4. Inside — золота зона */
-.gp-inside {
-  color: #3d9fa6 !important; /* Бірюзовий */
-  font-weight: 700;
+.duration-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
 }
 
-/* 5. Near Upper — підходить до GP зверху */
-.gp-near-upper {
-  color: #3ab5b1 !important; /* Середній бірюзовий (цільовий колір) */
-  font-weight: 600;
+.duration-segment {
+   height: 22px;
+  width: 5px;
+  background: linear-gradient(180deg, #eafff4, #618c78);
+  border-radius: 3px;
+  opacity: 0.9;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+/* volume */
+.volume-ring {
+  width: 12px;
+  height: 12px;
+  border: 2px solid whitesmoke;
+  border-radius: 50%;
+  opacity: 0.9;
+  animation: ringPulse 1.4s infinite ease-in-out;
+}
+.volume-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+@keyframes ringPulse {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.6; }
 }
 
-/* 6. Above — тренд продовжується */
-.gp-above {
-  color: #1bd8d2 !important; /* Трохи темніший бірюзовий */
-  font-weight: 600;
-}
 
-/* 7. Far Above — перегрітий імпульс */
-.gp-far-above {
-  color: #00fff7 !important; /* Темний бірюзовий */
-  font-weight: 700;
-}
+
+
 @media (max-width: 900px) {
   .short-grid {
     grid-template-columns: repeat(2, 1fr);

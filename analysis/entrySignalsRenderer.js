@@ -15,6 +15,19 @@ export function renderEntrySignals({
     return entrySignalsText;
   }
 
+// =======================
+// DERIVED CONTEXT METRICS
+// =======================
+const derived = {
+  trendStability: calcTrendStability(data),
+  impulseQuality: calcImpulseQuality(data),
+  retracementRisk: calcRetracementRisk(data),
+  volumePressure: calcVolumePressure(data),
+  volatilityRegime: calcVolatilityRegime(data),
+};
+
+
+
   // =======================
   // ENTRY SIGNALS LOOP
   // =======================
@@ -39,140 +52,123 @@ export function renderEntrySignals({
     // ENTRY PRICE
     const entryPrice = sig.entryPrice ? sig.entryPrice(data) : data.Price;
 
-    // STOP / TP LOGIC
-    let stopLow, stopHigh, tp1;
-    const atr = data.ATR || 0;
+    // =======================
+    // BASIC STOP/TP (без адаптивних)
+    // =======================
+    const { stopHigh, tp1 } = basicStops(sig, data, entryPrice);
 
-    if (sig.type === "long") {
-      switch (sig.id) {
-        case 1:
-          stopLow = data.Bollinger_L - atr * 0.3;
-          stopHigh = data.Bollinger_L - atr * 0.1;
-          tp1 = data.Bollinger_M || data.EMA21 || data.Price;
-          break;
+// =======================
+// ENTRY VALIDITY REASONS / WARNINGS
+// =======================
+const reasons = [];
+const warnings = [];
 
-        case 2:
-          stopLow = data.EMA50 - atr * 0.3;
-          stopHigh = data.EMA50;
-          tp1 = data.EMA8 || data.EMA21 + atr;
-          break;
+if (derived.trendStability > 0.6 && sig.context === "trend")
+  reasons.push("Strong trend alignment");
 
-        case 3:
-          stopLow = data.EMA50 - atr * 0.5;
-          stopHigh = data.EMA50 - atr * 0.2;
-          tp1 = data.EMA21 || data.EMA50 + atr;
-          break;
+if (derived.volumePressure > 1.2)
+  reasons.push("Positive volume pressure");
 
-        case 4:
-          stopLow = data.VWAP - atr * 0.6;
-          stopHigh = data.VWAP - atr * 0.3;
-          tp1 = data.VWAP + atr * 0.8;
-          break;
+if (derived.impulseQuality > 0.55)
+  reasons.push("Healthy impulse structure");
 
-        case 5:
-          const kLower =
-            data.keltnerLower || data.Bollinger_L || data.Price - atr;
-          stopLow = kLower - atr * 0.3;
-          stopHigh = kLower;
-          tp1 = data.Price + atr * 1.0;
-          break;
+if (derived.retracementRisk > 1.4)
+  warnings.push("High retracement risk");
 
-        case 6:
-          stopLow = data.keltnerLower - atr * 0.3;
-          stopHigh = data.keltnerLower - atr * 0.1;
-          tp1 = data.keltnerLower + atr * 1.0;
-          break;
+if (derived.volatilityRegime > 1.3)
+  warnings.push("High volatility regime");
 
-        default:
-          stopLow = entryPrice - atr;
-          stopHigh = entryPrice - atr * 0.5;
-          tp1 = entryPrice + atr;
-          break;
-      }
-    }
+if (marketStrength.score < 30)
+  warnings.push("Weak market environment");
+    // =======================
+    // CONFIDENCE (без quality engine)
+    // =======================
+    let confidence = 45;
 
-    if (sig.type === "short") {
-      switch (sig.id) {
-        case 1:
-          stopLow = data.Bollinger_U + atr * 0.1;
-          stopHigh = data.Bollinger_U + atr * 0.3;
-          tp1 = data.Bollinger_M || data.EMA21 || data.Price;
-          break;
+    confidence += sig.priority * 4;
 
-        case 2:
-          stopLow = data.EMA50;
-          stopHigh = data.EMA50 + atr * 0.3;
-          tp1 = data.EMA8 || data.EMA21 - atr;
-          break;
+    if (sig.context === "trend") confidence += 8;
+    if (sig.context === "reversion") confidence += 4;
+    if (sig.context === "intraday") confidence += 6;
+    if (sig.context === "momentum") confidence += 9;
 
-        case 3:
-          stopLow = data.EMA50 + atr * 0.2;
-          stopHigh = data.EMA50 + atr * 0.5;
-          tp1 = data.EMA21 || data.EMA50 - atr;
-          break;
+    confidence += Math.min(15, Math.floor(marketStrength.score * 0.15));
 
-        case 4:
-          stopLow = data.VWAP + atr * 0.3;
-          stopHigh = data.VWAP + atr * 0.6;
-          tp1 = data.VWAP - atr * 0.8;
-          break;
+    if (compositeActive) confidence += 6;
 
-        case 5:
-          const kUpper =
-            data.keltnerUpper || data.Bollinger_U || data.Price + atr;
-          stopLow = kUpper;
-          stopHigh = kUpper + atr * 0.3;
-          tp1 = data.Price - atr * 1.0;
-          break;
+    confidence = Math.max(5, Math.min(95, confidence));
 
-        case 6:
-          stopLow = data.keltnerUpper + atr * 0.1;
-          stopHigh = data.keltnerUpper + atr * 0.3;
-          tp1 = data.keltnerUpper - atr * 1.0;
-          break;
-
-        default:
-          stopLow = entryPrice + atr * 0.5;
-          stopHigh = entryPrice + atr;
-          tp1 = entryPrice - atr;
-          break;
-      }
-    }
-
-let confidence = 45;
-
-// priority
-confidence += sig.priority * 4;
-
-// context (м’якше)
-if (sig.context === "trend") confidence += 8;
-if (sig.context === "reversion") confidence += 4;
-if (sig.context === "intraday") confidence += 6;
-if (sig.context === "momentum") confidence += 9;
-
-// market strength — з обмеженням
-confidence += Math.min(15, Math.floor(marketStrength.score * 0.15));
-
-// composite — не домінує
-if (compositeActive) confidence += 6;
-
-// фінальний clamp (ВАЖЛИВО)
-confidence = Math.max(5, Math.min(95, confidence));
-
-
+    // =======================
     // OUTPUT
+    // =======================
     entrySignalsText += `${star}${typeColor} | ${ctxIcon} ${sig.name} (priority ${sig.priority})${boost}\n`;
 
-entrySignalsText += `
-<div class="signal-block">
-  <div class="sb-item"><span>entry:</span> <strong>${Number(entryPrice).toFixed(2)}</strong></div>
-  <div class="sb-item"><span>stop:</span> <strong>${Number(stopHigh).toFixed(2)}</strong></div>
-  <div class="sb-item"><span>tp1:</span> <strong>${Number(tp1).toFixed(2)}</strong></div>
-  <div class="sb-item"><span>confidence:</span> <strong>${confidence}%</strong></div>
-</div>
-`;
+//     entrySignalsText += `
+// <div class="signal-block">
+//   <div class="sb-item"><span>entry:</span> <strong>${Number(entryPrice).toFixed(2)}</strong></div>
+//   <div class="sb-item"><span>stop:</span> <strong>${Number(stopHigh).toFixed(2)}</strong></div>
+//   <div class="sb-item"><span>tp1:</span> <strong>${Number(tp1).toFixed(2)}</strong></div>
+//   <div class="sb-item"><span>confidence:</span> <strong>${confidence}%</strong></div>
+// </div>
+// `;
 
+    if (reasons.length > 0) {
+      entrySignalsText += `<div class="reasons">Reasons: ${reasons.join(", ")}</div>`;
+    }
+
+    if (warnings.length > 0) {
+      entrySignalsText += `<div class="warnings">Warnings: ${warnings.join(", ")}</div>`;
+    }
   });
 
   return entrySignalsText;
+}
+
+// =======================
+// HELPERS
+// =======================
+
+function basicStops(sig, data, entryPrice) {
+  const atr = data.ATR || 0;
+  let stopHigh, tp1;
+
+  if (sig.type === "long") {
+    stopHigh = entryPrice - atr * 0.5;
+    tp1 = entryPrice + atr;
+  } else {
+    stopHigh = entryPrice + atr * 0.5;
+    tp1 = entryPrice - atr;
+  }
+
+  return { stopHigh, tp1 };
+}
+
+// =======================
+// DERIVED METRICS
+// =======================
+
+function calcTrendStability(data) {
+  const slope = Math.abs(data.EMA21 - data.EMA50) / (data.ATR || 1);
+  const chop = data.chopIndex || 0.5;
+  return slope * (1 - chop);
+}
+
+function calcImpulseQuality(data) {
+  const body = Math.abs(data.Close - data.Open);
+  const range = data.High - data.Low;
+  const volume = data.Volume || 1;
+  return (body / range) * Math.log(volume + 1);
+}
+
+function calcRetracementRisk(data) {
+  const dist = Math.abs(data.Price - data.SwingHigh);
+  return dist / (data.ATR || 1);
+}
+
+function calcVolumePressure(data) {
+  return (data.buyVolume || 1) / (data.sellVolume + 1);
+}
+
+function calcVolatilityRegime(data) {
+  return (data.ATR || 1) / (data.ATR_smooth || 1);
 }

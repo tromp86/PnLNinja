@@ -4,7 +4,9 @@
 
 import { fibMetricInfo } from "./fib-info.js";
 
-// Головна функція оновлення панелі
+// ===============================
+// MAIN RENDER
+// ===============================
 export function updateFibonacciOutput(fibData) {
   const container = document.getElementById("outputFibonacci");
   if (!container) return;
@@ -27,44 +29,22 @@ export function updateFibonacciOutput(fibData) {
   } = fibData;
 
   // ===============================
-  // 1. Підготовка базових даних
+  // BASE INFO
   // ===============================
-
-  const impulseKey = isBullishImpulse ? "bullish" : "bearish";
-  const impulseInfo = fibMetricInfo.impulseDirection[impulseKey];
 
   const retrKey = normalizeRetrKey(retracementType);
-  const retrInfo = fibMetricInfo.retracement[retrKey];
-
-  const gpStatusObj = getGoldenPocketStatus(last, goldenPocket);
-
-  const gpDesc = gpStatusObj.desc;
-
-  const gpStatus = gpStatusObj.key;
-  const gpInfo = fibMetricInfo.goldenPocket[gpStatus];
-
-  const impulseStrengthInfo = fibMetricInfo.impulseStrength;
-  const volumeStrengthInfo = fibMetricInfo.volumeStrength;
-  const correctionDepthInfo = fibMetricInfo.correctionDepth;
-  const impulseBarsInfo = fibMetricInfo.impulseBars;
-  const volumeClimaxInfo = fibMetricInfo.volumeClimax;
+  const retrInfo = fibMetricInfo.retracement[retrKey] || {
+    label: "Retracement",
+  };
 
   // ===============================
-  // 2. SAFE FALLBACKS
+  // DERIVED METRICS
   // ===============================
 
-  const impulseInfoSafe = impulseInfo || { label: "Impulse" };
-  const retrInfoSafe = retrInfo || { label: "Retracement" };
-  const gpInfoSafe = gpInfo || { label: "Golden Pocket" };
-
-  // ===============================
-  // 3. ПОХІДНІ МЕТРИКИ
-  // ===============================
-
-  // Volume Pressure — наскільки об’єм підтримує рух
+  // Volume Pressure
   const volumePressure = volumeStrength * (isVolumeClimax ? 1.3 : 1);
 
-  // Trend Stability — стабільність тренду
+  // Trend Stability
   const barsFactor = impulseBars <= 4 ? 1 : impulseBars <= 8 ? 0.7 : 0.4;
   const trendStability =
     (barsFactor *
@@ -72,157 +52,183 @@ export function updateFibonacciOutput(fibData) {
       Math.min(volumeStrength, 3)) /
     2;
 
-  // Retracement Risk — рівень ризику за глибиною корекції
+  // Retracement Risk
   const riskLevel =
     correctionDepth < 0.38
       ? "Low"
       : correctionDepth < 0.61
       ? "Medium"
-      : correctionDepth < 1.0
+      : correctionDepth < 1
       ? "High"
       : "Very High";
 
   // ===============================
-  // 4. Генерація HTML
+  // RENDER
   // ===============================
-
   container.innerHTML = `
+    <div class="short-grid">
+    </div>
 
-        <!-- SHORT GRID: Golden Pocket + Direction + Retracement -->
-        <div class="short-grid">
+    <div class="mini-grid">
 
-            <div class="short-item">
-<div class="short-label gp-${gpStatus}">${gpInfoSafe.label}</div>
-<div class="mini-desc">${gpDesc}</div>
-
-            </div>
-
+      <div class="mini-item">
+        <div class="mini-label">${fibMetricInfo.impulseStrength.label}</div>
+        <div class="mini-value">
+          ${impulseStrength.toFixed(1)}%
+          <span class="impulse-arrows">${getImpulseArrows(
+            impulseStrength
+          )}</span>
         </div>
+        <div class="mini-desc">${fibMetricInfo.impulseStrength.short}</div>
+      </div>
 
-        <!-- MINI GRID: ключові числові + похідні -->
-        <div class="mini-grid">
-
-            <div class="mini-item">
-                <div class="mini-label">${impulseStrengthInfo.label}</div>
-                <div class="mini-value">${impulseStrength.toFixed(1)}%</div>
-                <div class="mini-desc">${impulseStrengthInfo.short}</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">${correctionDepthInfo.label}</div>
-                <div class="mini-value">${(correctionDepth * 100).toFixed(
-                  1
-                )}%</div>
-                <div class="mini-desc">${correctionDepthInfo.short}</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">${impulseBarsInfo.label}</div>
-                <div class="mini-value">${impulseBars}</div>
-                <div class="mini-desc">${impulseBarsInfo.short}</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">${volumeStrengthInfo.label}</div>
-                <div class="mini-value">${volumeStrength.toFixed(2)}x</div>
-                <div class="mini-desc">${volumeStrengthInfo.short}</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">Volume Pressure</div>
-                <div class="mini-value">${volumePressure.toFixed(2)}</div>
-                <div class="mini-desc">Volume support factor</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">Trend Stability</div>
-                <div class="mini-value">${trendStability.toFixed(2)}</div>
-                <div class="mini-desc">Trend consistency score</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">${volumeClimaxInfo.label}</div>
-                <div class="mini-value">${isVolumeClimax ? "Yes" : "No"}</div>
-                <div class="mini-desc">${volumeClimaxInfo.short}</div>
-            </div>
-
-            <div class="mini-item">
-                <div class="mini-label">Retracement Risk</div>
-                <div class="mini-value">${riskLevel}</div>
-                <div class="mini-desc">Risk based on pullback depth</div>
-            </div>
-
+      <div class="mini-item">
+        <div class="mini-label">${fibMetricInfo.correctionDepth.label}</div>
+        <div class="mini-value depth-wrapper">
+          ${(correctionDepth * 100).toFixed(1)}%
+          <div class="depth-meter">
+            <div class="depth-level" style="height:${
+              correctionDepth * 100
+            }%"></div>
+          </div>
         </div>
-    `;
+        <div class="mini-desc">${fibMetricInfo.correctionDepth.short}</div>
+      </div>
+
+      <div class="mini-item">
+        <div class="mini-label">${fibMetricInfo.impulseBars.label}</div>
+        <div class="mini-value duration-wrapper">
+          ${impulseBars}
+          <div class="duration-meter">
+            ${getDurationSegments({
+              bars: impulseBars,
+              depthPct: correctionDepth * 100,
+              speed: impulseStrength / 50,
+            })
+              .map(
+                (h) =>
+                  `<div class="duration-segment" style="height:${h}px"></div>`
+              )
+              .join("")}
+          </div>
+        </div>
+        <div class="mini-desc">${fibMetricInfo.impulseBars.short}</div>
+      </div>
+
+<div class="mini-item">
+  <div class="mini-label">${fibMetricInfo.volumeStrength.label}</div>
+
+<div class="mini-value volume-wrapper">
+  ${volumeStrength.toFixed(2)}x
+  <div class="volume-ring" style="animation-duration: ${getVolumePulseSpeed(volumeStrength)};"></div>
+</div>
+  <div class="mini-desc">${fibMetricInfo.volumeStrength.short}</div>
+</div>
+
+      <div class="mini-item">
+        <div class="mini-label">Volume Pressure</div>
+        <div class="mini-value">${volumePressure.toFixed(2)}</div>
+        <div class="mini-desc">Volume support factor</div>
+      </div>
+
+      <div class="mini-item">
+        <div class="mini-label">Trend Stability</div>
+        <div class="mini-value">${trendStability.toFixed(2)}</div>
+        <div class="mini-desc">Trend consistency score</div>
+      </div>
+
+      <div class="mini-item">
+        <div class="mini-label">${fibMetricInfo.volumeClimax.label}</div>
+        <div class="mini-value">${isVolumeClimax ? "Yes" : "No"}</div>
+        <div class="mini-desc">${fibMetricInfo.volumeClimax.short}</div>
+      </div>
+
+      <div class="mini-item">
+        <div class="mini-label">Retracement Risk</div>
+        <div class="mini-value">${riskLevel}</div>
+        <div class="mini-desc">Risk based on pullback depth</div>
+      </div>
+
+    </div>
+  `;
 }
 
 // ===============================
 // HELPERS
 // ===============================
 
-function getGoldenPocketStatus(normalizedPrice, goldenPocket) {
-  if (!goldenPocket) {
-    return { key: "unknown", desc: "Немає даних про Golden Pocket" };
+function getImpulseArrows(strength) {
+  if (strength < 20) return "↑";
+  if (strength < 40) return "↑↑";
+  if (strength < 60) return "↑↑↑";
+  return "↑↑↑↑";
+}
+
+// ===============================
+// HEARTBEAT — CORRECTION POWER
+// ===============================
+function getDurationSegments({ bars, depthPct, speed }) {
+  // ---- SAFE CLAMP
+  bars = Math.max(1, bars || 1);
+  depthPct = Math.max(0, depthPct || 0);
+  speed = Math.max(0.3, speed || 1);
+
+  // ---- SEGMENTS COUNT
+  const count =
+    bars < 10 ? 2 :
+    bars < 20 ? 3 :
+    bars < 30 ? 4 :
+    bars < 40 ? 5 : 6;
+
+  // ---- NORMALIZED POWER
+  const durationFactor = Math.min(bars / 40, 1);
+  const depthFactor = Math.min(depthPct / 10, 1);
+  const speedFactor = Math.min(speed / 2, 1);
+
+  const correctionPower =
+    durationFactor * 0.4 +
+    depthFactor * 0.4 +
+    speedFactor * 0.2;
+
+  // ---- HEIGHT RANGE
+  const minH = 4;
+  const maxH = 10 + correctionPower * 20;
+
+  const heights = [];
+
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+
+    // ---- PANIC SPIKE
+    if (i === 0 && correctionPower > 0.6) {
+      heights.push(Math.round(maxH * 0.9));
+      continue;
+    }
+
+    // ---- ASYMMETRIC WAVE
+    const skew = 0.6 + correctionPower * 0.6;
+    const wave = Math.sin(Math.pow(t, skew) * Math.PI);
+
+    // ---- DECAY
+    const decay = 1 - t * 0.35;
+
+    const h = minH + wave * (maxH - minH) * decay;
+    heights.push(Math.round(h));
   }
 
-  const { from, to } = goldenPocket;
+  return heights;
+}
 
-  const width = to - from;
-  const center = (from + to) / 2;
+function getVolumePulseSpeed(volumeStrength) {
+  const minSpeed = 0.8;   // найшвидший пульс
+  const maxSpeed = 1.5;   // найповільніший пульс
+  const maxStrength = 1.8; // після цього швидкість не росте
 
-  // 1) Deep below GP
-  if (normalizedPrice < from - width * 2) {
-    return {
-      key: "far-below",
-      desc: "Ціна значно нижче Golden Pocket — структура сильно ослаблена",
-    };
-  }
+  const normalized = Math.min(volumeStrength, maxStrength) / maxStrength;
 
-  // 2) Below GP
-  if (normalizedPrice < from - width * 0.5) {
-    return {
-      key: "below",
-      desc: "Ціна нижче Golden Pocket — слабка зона",
-    };
-  }
+  const speed = maxSpeed - (maxSpeed - minSpeed) * normalized;
 
-  // 3) Near lower boundary
-  if (normalizedPrice < from) {
-    return {
-      key: "near-lower",
-      desc: "Ціна підходить до Golden Pocket знизу — потенційна зона реакції",
-    };
-  }
-
-  // 4) Inside GP
-  if (normalizedPrice >= from && normalizedPrice <= to) {
-    return {
-      key: "inside",
-      desc: "Ціна всередині Golden Pocket — золота зона реакції",
-    };
-  }
-
-  // 5) Near upper boundary
-  if (normalizedPrice <= to + width * 0.5) {
-    return {
-      key: "near-upper",
-      desc: "Ціна підходить до Golden Pocket зверху — можливий відкат",
-    };
-  }
-
-  // 6) Above GP
-  if (normalizedPrice <= to + width * 2) {
-    return {
-      key: "above",
-      desc: "Ціна вище Golden Pocket — тренд продовжується",
-    };
-  }
-
-  // 7) Far above GP
-  return {
-    key: "far-above",
-    desc: "Ціна значно вище Golden Pocket — імпульс перегрітий",
-  };
+  return speed.toFixed(2) + "s";
 }
 function normalizeRetrKey(raw) {
   if (!raw) return "normal";
@@ -232,3 +238,9 @@ function normalizeRetrKey(raw) {
   if (v.includes("over")) return "overextended";
   return "normal";
 }
+
+
+      // <div class="short-label gp-${gpStatusObj.key}">
+      //     ${gpInfo.label}
+      //   </div>
+      //   <div class="mini-desc">${gpStatusObj.desc}</div>
