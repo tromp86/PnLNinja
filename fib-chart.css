@@ -72,19 +72,19 @@
 
 .mini-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 7px 7px;
 }
 
 .mini-item {
   background: linear-gradient(0deg, #1a1a1a 0%, #14141a 100%);
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   min-height: 90px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-around;
 }
 
 .mini-label {
@@ -100,6 +100,7 @@
   font-weight: 600;
   color: #ffffff;
   margin-bottom: 4px;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .mini-desc {
@@ -108,106 +109,422 @@
   display: block;
 }
 
-.bullish {
-  color: #7fffd4 !important;
-}
-.bearish {
-  color: #ff9aa2 !important;
-}
-
-
-/* impulse */
-.impulse-arrows {
-  color: whitesmoke;
-  font-weight: 900;
-  font-size: 1.45em;
-  letter-spacing: 3px;
-  padding-left: 6px;
-}
-/* depth */
-.depth-wrapper {
-  display: flex;
+/* =============================== */
+/* IMPULSE STRENGTH - Стрілка імпульсу */
+/* =============================== */
+.arrow-wrapper {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  height: 25px; 
+  max-width: 180px; 
+  width: 100%;
+  vertical-align: middle;
 }
 
+.arrow-body {
+  height: 8px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(186, 186, 186, 0.8) 100%
+  );
+  transition: width 0.4s ease;
+}
+
+.arrow-tip {
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 16px solid rgba(186, 186, 186, 0.8);
+}
+
+/* =============================== */
+/* CORRECTION DEPTH - Глибина корекції */
+/* =============================== */
 .depth-meter {
-  max-width: 200px;
-  width: 60%;
-  height: 28px;
+  width: 100%;
+  max-width: 180px;
+  height: 25px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+border-radius: 3px;
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 6px;
 }
 
 .depth-level {
   width: 100%;
-  background: linear-gradient(180deg, #8a8a8a, #bebebe, #f7f7f7);
-  transition: height 0.35s ease;
-  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  transition: height 0.25s ease;
+  position: absolute;
+  bottom: 0;
+  left: 0;
 }
-/* duration */
+
+/* Фібо маркери */
+.depth-meter::before,
+.depth-meter::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.1px;
+  background: rgba(255, 255, 255, 0.232);
+  z-index: 1;
+}
+
+.depth-meter::before {
+  top: 38.2%; /* 61.8% від низу */
+}
+
+.depth-meter::after {
+  top: 61.8%; /* 38.2% від низу */
+}
+
+.depth-meter:hover .depth-level {
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+}
+
+/* =============================== */
+/* IMPULSE DURATION - Тривалість імпульсу */
+/* =============================== */
 .duration-wrapper {
   display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 180px;
+  gap: 8px;
+}
+
+.duration-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  width: 100%;
+}
+
+.duration-value {
+  font-size: 1em;
+  font-weight: 600;
+  color: white;
+}
+
+.duration-label {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .duration-meter {
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 25px;
   gap: 3px;
 }
 
 .duration-segment {
-   height: 22px;
-  width: 5px;
-  background: linear-gradient(180deg, #eafff4, #618c78);
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(180deg, #ffffff, #006f41);
   border-radius: 3px;
   opacity: 0.9;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
-/* volume */
-.volume-ring {
-  width: 12px;
-  height: 12px;
-  border: 2px solid whitesmoke;
-  border-radius: 50%;
-  opacity: 0.9;
-  animation: ringPulse 1.4s infinite ease-in-out;
-}
-.volume-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-@keyframes ringPulse {
-  0% { transform: scale(0.85); opacity: 0.6; }
-  50% { transform: scale(1.25); opacity: 1; }
-  100% { transform: scale(0.85); opacity: 0.6; }
+
+.duration-segment:nth-child(odd) {
+  height: 70%;
 }
 
+.duration-segment:nth-child(even) {
+  height: 90%;
+}
 
+/* =============================== */
+/* VOLUME PRESSURE - Тиск об'єму */
+/* =============================== */
+.volume-pressure-meter {
+  width: 100%;
+  max-width: 180px;
+  height: 25px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
+/* Горизонтальна heatmap‑лінія */
+.volume-pressure-fill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-1px);
+  background: linear-gradient(
+    90deg,
+    #3f817a 0%,
+    #e6b85c 50%,
+    #d64f4f 100%
+  );
+  pointer-events: none;
+}
 
-@media (max-width: 900px) {
+/* Вертикальна тонка лінія на кінці червоного */
+.volume-pressure-end-line {
+  position: absolute;
+  right: 0;
+  top: -12px;
+  width: 1px;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+/* =============================== */
+/* TREND STABILITY - Стабільність тренду */
+/* =============================== */
+.stability-svg {
+  width: 100%;
+  max-width: 180px;
+  height: 25px;
+  display: block;
+}
+
+.stability-svg path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: drawPath 1.5s ease forwards;
+}
+
+/* =============================== */
+/* RETRACEMENT RISK - Ризик відкату */
+/* =============================== */
+.risk-bar-wrapper {
+  width: 100%;
+  max-width: 180px;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 6px;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+/* Рівні ризику */
+.risk-low .risk-bar-fill {
+  width: 25%;
+  background: rgba(63, 63, 63, 0.689); 
+}
+
+.risk-medium .risk-bar-fill {
+  width: 50%;
+  background: rgba(118, 118, 118, 0.689); 
+}
+
+.risk-high .risk-bar-fill {
+  width: 75%;
+  background: rgba(178, 178, 178, 0.689); 
+}
+
+.risk-very-high .risk-bar-fill {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.689); 
+}
+
+/* Маркери рівнів */
+.risk-bar-wrapper::before,
+.risk-bar-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+.risk-bar-wrapper::before {
+  left: 33.3%; /* Medium */
+}
+
+.risk-bar-wrapper::after {
+  left: 66.6%; /* High */
+}
+
+/* =============================== */
+/* СПІЛЬНІ АНІМАЦІЇ */
+/* =============================== */
+@keyframes drawPath {
+  to { stroke-dashoffset: 0; }
+}
+
+/* =============================== */
+/* МОБІЛЬНІ СТИЛІ (mobile only) */
+/* =============================== */
+
+@media (max-width: 768px) {
+  /* Контейнери */
+  .short-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    margin: 5px 0;
+  }
+  
+  .mini-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }
+  
+  /* Елементи */
+  .short-item {
+    padding: 8px 10px;
+    min-height: auto;
+    gap: 8px;
+  }
+  
+  .mini-item {
+    padding: 10px 12px;
+    min-height: 60px; /* Ще менше */
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Текст */
+  .short-label {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  
+  .mini-label {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  
+  .mini-value {
+    font-size: 15px; /* Більше для компенсації */
+    font-weight: 700;
+    margin-bottom: 0;
+  }
+  
+  /* ХОВАЄМО ОПИС ТА ВСІ ІНДИКАТОРИ НА МОБІЛЬНИХ */
+  .mini-desc {
+    display: none !important;
+  }
+  
+  /* ХОВАЄМО ВСІ ІНДИКАТОРИ */
+  .arrow-wrapper,
+  .depth-meter,
+  .volume-pressure-meter,
+  .duration-wrapper,
+  .duration-meter,
+  .stability-svg,
+  .risk-bar-wrapper,
+  .volume-pressure-fill,
+  .volume-pressure-end-line,
+  .duration-header,
+  .depth-level,
+  .risk-bar-fill,
+  .arrow-body,
+  .arrow-tip {
+    display: none !important;
+  }
+  
+  /* duration-wrapper без метра */
+  .duration-wrapper {
+    display: block !important;
+    max-width: 100%;
+    height: auto;
+      text-align: center;
+  }
+}
+
+/* Дуже маленькі екрани */
+@media (max-width: 480px) {
+  .mini-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  .mini-item {
+    padding: 8px 10px;
+    min-height: 55px;
+  }
+  
+  .mini-value {
+    font-size: 16px;
+  }
+  
+  /* Горизонтальні short-елементи */
+  .short-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+}
+
+/* Ландшафтна орієнтація */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mini-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .mini-item {
+    min-height: 55px;
+    padding: 6px 8px;
+  }
+  
   .short-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .long-grid {
-    grid-template-columns: 1fr;
-  }
-  .mini-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
-@media (max-width: 600px) {
-  .short-grid {
-    grid-template-columns: 1fr;
-  }
+/* Планшети */
+@media (min-width: 769px) and (max-width: 1024px) {
   .mini-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .mini-item {
+    min-height: 60px;
+    justify-content: center;
+  }
+  
+  /* На планшетах теж ховаємо описи та індикатори */
+  .mini-desc {
+    display: none !important;
+  }
+  
+  .arrow-wrapper,
+  .depth-meter,
+  .volume-pressure-meter,
+  .duration-wrapper .duration-meter,
+  .stability-svg,
+  .risk-bar-wrapper,
+  .duration-header {
+    display: none !important;
   }
 }

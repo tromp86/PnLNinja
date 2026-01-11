@@ -20,22 +20,9 @@ export function updateFibonacciOutput(fibData) {
     correctionDepth,
     impulseStrength,
     volumeStrength,
-    isBullishImpulse,
-    goldenPocket,
-    retracementType,
     impulseBars,
     isVolumeClimax,
-    last,
   } = fibData;
-
-  // ===============================
-  // BASE INFO
-  // ===============================
-
-  const retrKey = normalizeRetrKey(retracementType);
-  const retrInfo = fibMetricInfo.retracement[retrKey] || {
-    label: "Retracement",
-  };
 
   // ===============================
   // DERIVED METRICS
@@ -84,7 +71,7 @@ export function updateFibonacciOutput(fibData) {
 
       <div class="mini-item">
         <div class="mini-label">${fibMetricInfo.correctionDepth.label}</div>
-        <div class="mini-value depth-wrapper">
+        <div class="mini-value">
           ${(correctionDepth * 100).toFixed(1)}%
           <div class="depth-meter">
             <div class="depth-level" style="height:${
@@ -116,36 +103,40 @@ export function updateFibonacciOutput(fibData) {
       </div>
 
 <div class="mini-item">
-  <div class="mini-label">${fibMetricInfo.volumeStrength.label}</div>
+  <div class="mini-label">Volume Pressure</div>
+  <div class="mini-value">${volumePressure.toFixed(2)}</div>
 
-<div class="mini-value volume-wrapper">
-  ${volumeStrength.toFixed(2)}x
-  <div class="volume-ring" style="animation-duration: ${getVolumePulseSpeed(volumeStrength)};"></div>
+<div class="volume-pressure-meter">
+  <div 
+    class="volume-pressure-fill"
+    style="width: ${Math.min(volumePressure / 3 * 100, 100)}%"
+  >
+    <div class="volume-pressure-end-line"></div>
+  </div>
 </div>
-  <div class="mini-desc">${fibMetricInfo.volumeStrength.short}</div>
+
+
+  <div class="mini-desc">Volume amplification factor</div>
 </div>
 
-      <div class="mini-item">
-        <div class="mini-label">Volume Pressure</div>
-        <div class="mini-value">${volumePressure.toFixed(2)}</div>
-        <div class="mini-desc">Volume support factor</div>
-      </div>
-
-      <div class="mini-item">
-        <div class="mini-label">Trend Stability</div>
-        <div class="mini-value">${trendStability.toFixed(2)}</div>
-        <div class="mini-desc">Trend consistency score</div>
-      </div>
-
-      <div class="mini-item">
-        <div class="mini-label">${fibMetricInfo.volumeClimax.label}</div>
-        <div class="mini-value">${isVolumeClimax ? "Yes" : "No"}</div>
-        <div class="mini-desc">${fibMetricInfo.volumeClimax.short}</div>
-      </div>
+<div class="mini-item">
+  <div class="mini-label">Trend Stability</div>
+  <div class="mini-value">
+    ${trendStability.toFixed(2)}
+    <span class="stability-visual">
+      ${getStabilityChart(trendStability)}
+    </span>
+  </div>
+  <div class="mini-desc">Trend consistency score</div>
+</div>
 
       <div class="mini-item">
         <div class="mini-label">Retracement Risk</div>
-        <div class="mini-value">${riskLevel}</div>
+        <div class="mini-value">
+  ${riskLevel}
+  ${getRiskIndicator(riskLevel)}
+</div>
+
         <div class="mini-desc">Risk based on pullback depth</div>
       </div>
 
@@ -158,89 +149,159 @@ export function updateFibonacciOutput(fibData) {
 // ===============================
 
 function getImpulseArrows(strength) {
-  if (strength < 20) return "↑";
-  if (strength < 40) return "↑↑";
-  if (strength < 60) return "↑↑↑";
-  return "↑↑↑↑";
+  const maxWidth = 280;
+  const currentLineWidth = (Math.min(strength, 100) / 100) * maxWidth;
+  
+  return `
+    <div class="arrow-wrapper">
+      <div class="arrow-body" style="width: ${currentLineWidth}px;"></div>
+      <div class="arrow-tip"></div>
+    </div>
+  `;
 }
-
-// ===============================
-// HEARTBEAT — CORRECTION POWER
-// ===============================
 function getDurationSegments({ bars, depthPct, speed }) {
   // ---- SAFE CLAMP
   bars = Math.max(1, bars || 1);
   depthPct = Math.max(0, depthPct || 0);
   speed = Math.max(0.3, speed || 1);
 
-  // ---- SEGMENTS COUNT
-  const count =
-    bars < 10 ? 2 :
-    bars < 20 ? 3 :
-    bars < 30 ? 4 :
-    bars < 40 ? 5 : 6;
+  // ---- COUNT (8–20)
+  const count = Math.min(Math.floor(bars / 1.7) + 8, 20);
 
-  // ---- NORMALIZED POWER
-  const durationFactor = Math.min(bars / 40, 1);
-  const depthFactor = Math.min(depthPct / 10, 1);
-  const speedFactor = Math.min(speed / 2, 1);
+  // ---- CORRECTION POWER
+  const durationFactor = Math.min(bars / 60, 1);
+  const depthFactor = Math.min(depthPct / 20, 1);
+  const speedFactor = Math.min(speed / 4, 1);
 
   const correctionPower =
-    durationFactor * 0.4 +
-    depthFactor * 0.4 +
-    speedFactor * 0.2;
+    durationFactor * 0.25 +
+    depthFactor * 0.55 +
+    speedFactor * 0.20;
 
   // ---- HEIGHT RANGE
-  const minH = 4;
-  const maxH = 10 + correctionPower * 20;
+  const minH = 3;
+  const maxH = 10 + correctionPower * 18;
 
   const heights = [];
 
   for (let i = 0; i < count; i++) {
     const t = i / (count - 1);
 
-    // ---- PANIC SPIKE
-    if (i === 0 && correctionPower > 0.6) {
-      heights.push(Math.round(maxH * 0.9));
-      continue;
-    }
-
-    // ---- ASYMMETRIC WAVE
-    const skew = 0.6 + correctionPower * 0.6;
-    const wave = Math.sin(Math.pow(t, skew) * Math.PI);
+    // ---- SINGLE-DIRECTION WAVE (1–1.5 cycles)
+    const frequency = 1 + correctionPower * 0.5;
+    const wave = Math.sin(t * Math.PI * frequency);
 
     // ---- DECAY
-    const decay = 1 - t * 0.35;
+    const decay = Math.exp(-t * 2.2);
 
-    const h = minH + wave * (maxH - minH) * decay;
-    heights.push(Math.round(h));
+    // ---- SMALL, DECAYING NOISE
+    const noise = (Math.random() - 0.5) * (correctionPower * 1.2) * decay;
+
+    // ---- HEIGHT
+    let h = minH + Math.max(0, wave) * (maxH - minH) * decay + noise;
+
+    // ---- FIRST BAR ALWAYS STRONGEST
+    if (i === 0) h = maxH;
+
+    heights.push(Math.round(Math.max(minH, h)));
   }
 
   return heights;
 }
 
-function getVolumePulseSpeed(volumeStrength) {
-  const minSpeed = 0.8;   // найшвидший пульс
-  const maxSpeed = 1.5;   // найповільніший пульс
-  const maxStrength = 1.8; // після цього швидкість не росте
 
-  const normalized = Math.min(volumeStrength, maxStrength) / maxStrength;
 
-  const speed = maxSpeed - (maxSpeed - minSpeed) * normalized;
+function getStabilityChart(score) {
+  const points = 15;
+  const width = 100;
+  const height = 20;
 
-  return speed.toFixed(2) + "s";
+  // Нормалізуємо score у 0–1
+  const normalized = Math.min(1, Math.max(0, (score - 0.05) / 0.10));
+
+  // Seed на основі score (щоб графік був стабільним)
+  let seed = Math.floor(normalized * 10000);
+
+  function seededRandom() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  // Підсилена амплітуда хаосу
+  const volatility = Math.pow(1 - normalized, 1.5) * 25;
+
+  let pathData = "M 0 10";
+
+  for (let i = 1; i <= points; i++) {
+    const x = (i / points) * width;
+
+    // Використовуємо seeded noise замість Math.random()
+    const spike = (seededRandom() - 0.5) * volatility;
+
+    const y = 10 + spike;
+    pathData += ` L ${x} ${y}`;
+  }
+
+  // Плавний перехід кольору
+  const color = scoreToColor(normalized);
+
+  return `
+    <svg 
+  class="stability-svg"
+  viewBox="0 0 ${width} ${height}"
+  preserveAspectRatio="none"
+>
+      <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  `;
 }
-function normalizeRetrKey(raw) {
-  if (!raw) return "normal";
-  const v = raw.toLowerCase();
-  if (v.includes("shallow")) return "shallow";
-  if (v.includes("deep")) return "deep";
-  if (v.includes("over")) return "overextended";
-  return "normal";
+
+function scoreToColor(score) {
+  if (score < 0.5) {
+    // Червоний → Бурштиновий (TradingView style)
+    const t = score / 0.5;
+    return lerpColor("#ff2525", "#ffaa0086", t);
+  } else {
+    // Бурштиновий → Глибокий зелений (TradingView style)
+    const t = (score - 0.5) / 0.5;
+    return lerpColor("#ffaa0086", "#24ff9c", t);
+  }
+}
+
+function lerpColor(a, b, t) {
+  const ar = parseInt(a.slice(1, 3), 16);
+  const ag = parseInt(a.slice(3, 5), 16);
+  const ab = parseInt(a.slice(5, 7), 16);
+
+  const br = parseInt(b.slice(1, 3), 16);
+  const bg = parseInt(b.slice(3, 5), 16);
+  const bb = parseInt(b.slice(5, 7), 16);
+
+  const rr = Math.round(ar + (br - ar) * t).toString(16).padStart(2, "0");
+  const rg = Math.round(ag + (bg - ag) * t).toString(16).padStart(2, "0");
+  const rb = Math.round(ab + (bb - ab) * t).toString(16).padStart(2, "0");
+
+  return `#${rr}${rg}${rb}`;
 }
 
 
-      // <div class="short-label gp-${gpStatusObj.key}">
-      //     ${gpInfo.label}
-      //   </div>
-      //   <div class="mini-desc">${gpStatusObj.desc}</div>
+function getRiskIndicator(risk) {
+  // Визначаємо клас ризику
+  let riskClass = "risk-low";
+  
+  if (risk === "Medium") {
+    riskClass = "risk-medium";
+  } 
+  else if (risk === "High") {
+    riskClass = "risk-high";
+  } 
+  else if (risk === "Very High") {
+    riskClass = "risk-very-high";
+  }
+
+  return `
+    <div class="risk-bar-wrapper ${riskClass}">
+      <div class="risk-bar-fill"></div>
+    </div>
+  `;
+}

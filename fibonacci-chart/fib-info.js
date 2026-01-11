@@ -32,7 +32,7 @@ export const fibMetricInfo = {
     // ===============================
     impulseStrength: {
         label: "Impulse Strength",
-        short: "Directional momentum (Сила імпульсу)"
+        short: "Directional momentum "
     },
 
     // ===============================
@@ -40,7 +40,7 @@ export const fibMetricInfo = {
     // ===============================
     volumeStrength: {
         label: "Volume Strength",
-        short: "Participation level (Рівень об'єму)"
+        short: "Participation level"
     },
 
     // ===============================
@@ -48,7 +48,7 @@ export const fibMetricInfo = {
     // ===============================
     correctionDepth: {
         label: "Correction Depth",
-        short: "Pullback magnitude (Глибина корекції)"
+        short: "Pullback magnitude"
     },
 
     // ===============================
@@ -56,7 +56,7 @@ export const fibMetricInfo = {
     // ===============================
     impulseBars: {
         label: "Impulse Duration",
-        short: "Impulse Velocity (Швидкість імпульсу)"
+        short: "Impulse Velocity"
     },
 
     // ===============================
@@ -66,38 +66,4 @@ export const fibMetricInfo = {
         label: "Volume Climax",
         short: "Decision point"
     },
-
-    // ===============================
-    // NEW PRO METRICS
-    // ===============================
-
-    // 1. Impulse Velocity
-    impulseVelocity: {
-        label: "Impulse Velocity",
-        short: "Movement speed (Швидкість імпульсу)"
-    },
-
-    // 2. ATR-Normalized Distance
-    atrNormalizedDistance: {
-        label: "ATR Distance",
-        short: "Volatility-adjusted range (Діапазон з урахуванням ATR)"
-    },
-
-    // 3. Impulse Exhaustion
-    impulseExhaustion: {
-        label: "Impulse Exhaustion",
-        short: "Fatigue level (Рівень втоми імпульсу)"
-    },
-
-    // 4. Impulse Maturity
-    impulseMaturity: {
-        label: "Impulse Maturity",
-        short: "Lifecycle phase (Фаза життєвого циклу імпульсу)"
-    },
-
-    // 5. Impulse Quality (NEW)
-    impulseQualityPro: {
-        label: "Impulse Quality (Pro)",
-        short: "Velocity + Volume + Structure (Комплексна якість імпульсу)"
-    }
 };

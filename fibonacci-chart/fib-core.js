@@ -48,12 +48,6 @@ export function calculateFibonacciData(highs, lows, closes, volumes) {
     // 7. Активна зона
     const activeZone = findActiveZone(last, fibLevels);
 
-    // 8. Golden Pocket
-    // const goldenPocket = {
-    //     from: swingLow + range * 0.618,
-    //     to: swingLow + range * 0.65
-    // };
-
     // 9. Тип корекції
     let retracementType = "unknown";
     if (correctionDepth < 0.382) retracementType = "shallow";
@@ -183,7 +177,6 @@ function calculateATR(highs, lows, closes, period = 14) {
 
     return trs.reduce((a, b) => a + b, 0) / trs.length;
 }
-
 
 // ===============================
 // calculateVolumeStrength
