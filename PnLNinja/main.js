@@ -102,22 +102,18 @@ pctRange.addEventListener("input", () => {
 // Buttons
 pctMinus.addEventListener("click", () => {
   let val = parseNumber(pctNum.value);
-  val = Math.max(val - 1, -50);
-
+  val = Math.max(val - 1, -150);   // мінімум -150%
   pctNum.value = val.toFixed(2);
   pctRange.value = val.toFixed(2);
-
   updatePriceFromPct();
   recalc();
 });
 
 pctPlus.addEventListener("click", () => {
   let val = parseNumber(pctNum.value);
-  val = Math.min(val + 1, 50);
-
+  val = Math.min(val + 1, 150);   // максимум +150%
   pctNum.value = val.toFixed(2);
   pctRange.value = val.toFixed(2);
-
   updatePriceFromPct();
   recalc();
 });
@@ -161,3 +157,12 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 
     sendToTelegram(price1, price2, notional);
 });
+
+
+
+
+
+
+const APP_VERSION = "1.0";
+
+document.getElementById("appVersion").textContent = "Version " + APP_VERSION;

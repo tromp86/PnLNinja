@@ -35,7 +35,7 @@
 
 <div class="pct-controls">
     <button id="pctMinus" class="button">🡸</button>
-    <input type="range" id="pctRange" class="pctRangeSlider" min="-50" max="50" step="0.1" value="0">
+    <input type="range" id="pctRange" class="pctRangeSlider" min="-150" max="150" step="0.1" value="0">
     <button id="pctPlus" class="button">🡺</button>
 </div>
 
@@ -73,9 +73,10 @@
         <span class="label">Зміна (%) між цінами:</span>
         <span class="value good" id="priceDiff">0%</span>
     </div>
+    
 <button class="button" id="sendBtn" disabled>Send to Telegram</button>
+<div id="appVersion" class="version"></div>
 </div>
-
 
 
 <script src="main.js"></script>
