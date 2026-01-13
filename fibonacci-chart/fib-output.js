@@ -159,56 +159,63 @@ function getImpulseArrows(strength) {
     </div>
   `;
 }
+
+// N3
 function getDurationSegments({ bars, depthPct, speed }) {
-  // ---- SAFE CLAMP
   bars = Math.max(1, bars || 1);
   depthPct = Math.max(0, depthPct || 0);
   speed = Math.max(0.3, speed || 1);
 
-  // ---- COUNT (8–20)
+  // Кількість сегментів
   const count = Math.min(Math.floor(bars / 1.7) + 8, 20);
 
-  // ---- CORRECTION POWER
+  // Фактори
   const durationFactor = Math.min(bars / 60, 1);
   const depthFactor = Math.min(depthPct / 20, 1);
   const speedFactor = Math.min(speed / 4, 1);
 
-  const correctionPower =
-    durationFactor * 0.25 +
-    depthFactor * 0.55 +
-    speedFactor * 0.20;
+  // Центральний індекс
+  const mid = Math.floor(count / 2);
 
-  // ---- HEIGHT RANGE
+  // Максимальна висота центрального бару
+  const maxH =
+    12 +
+    speedFactor * 18 +      // сильний імпульс → високий центр
+    durationFactor * 10;    // довгий імпульс → ще вище
+
   const minH = 3;
-  const maxH = 10 + correctionPower * 18;
 
   const heights = [];
 
   for (let i = 0; i < count; i++) {
-    const t = i / (count - 1);
+    const dist = Math.abs(i - mid); // відстань від центру
 
-    // ---- SINGLE-DIRECTION WAVE (1–1.5 cycles)
-    const frequency = 1 + correctionPower * 0.5;
-    const wave = Math.sin(t * Math.PI * frequency);
+    // Базова форма — "гора"
+    let h = maxH - dist * (maxH / count) * 1.8;
 
-    // ---- DECAY
-    const decay = Math.exp(-t * 2.2);
+    // Несподіваний імпульс → різкий стрибок
+    if (speedFactor > 0.7 && i === mid - 1) {
+      h = maxH * 0.9; // різкий підйом перед піком
+    }
 
-    // ---- SMALL, DECAYING NOISE
-    const noise = (Math.random() - 0.5) * (correctionPower * 1.2) * decay;
+    // Несподіваний імпульс → після маленького бару великий
+    if (speedFactor > 0.7 && i === mid + 1) {
+      h = maxH * 0.85;
+    }
 
-    // ---- HEIGHT
-    let h = minH + Math.max(0, wave) * (maxH - minH) * decay + noise;
+    // Глибока корекція → форма більш "рвана"
+    if (depthFactor > 0.7) {
+      h -= dist * 1.2;
+    }
 
-    // ---- FIRST BAR ALWAYS STRONGEST
-    if (i === 0) h = maxH;
+    // Обмеження
+    h = Math.max(minH, h);
 
-    heights.push(Math.round(Math.max(minH, h)));
+    heights.push(Math.round(h));
   }
 
   return heights;
 }
-
 
 
 function getStabilityChart(score) {
@@ -305,3 +312,5 @@ function getRiskIndicator(risk) {
     </div>
   `;
 }
+
+getDurationSegments
