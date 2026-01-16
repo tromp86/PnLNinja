@@ -295,6 +295,8 @@ footer div {
 .col {
     flex: 1 1 50%;
     max-width: 50%;
+
+     
     padding: 10px;
     background: linear-gradient(0deg, #1a1a1a 0%, #14141a 100%);
     border-radius: 8px;
@@ -554,7 +556,7 @@ footer div {
 
 
 
-.reasons,
+/* .reasons,
 .warnings {
   font-size: 13px;
   margin: 6px 0;
@@ -562,16 +564,16 @@ footer div {
   border-radius: 6px;
   font-weight: 500;
   backdrop-filter: blur(4px);
-}
+} */
 
 /* Зелені причини */
-.reasons {
+/* .reasons {
   background: rgba(88, 149, 122, 0.12);
   border-left: 3px solid rgba(157, 255, 211, 0.5);
   color: rgb(218, 255, 241);
 }
 
-/* Жовті попередження */
+
 .warnings {
   background: rgba(170, 163, 138, 0.12);
   border-left: 3px solid rgba(114, 109, 91, 0.5);
@@ -583,10 +585,8 @@ footer div {
     display: grid;
     grid-template-columns: repeat(4, minmax(5px, auto));
     justify-content: start;
-    /* gap: 5px 0px; */
     padding-top: 8px;
     padding-right: 10px;
-    /* padding: 10px 12px; */
     background: rgba(20, 23, 28, 0.55);
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -611,7 +611,14 @@ footer div {
 .sb-item strong {
     font-weight: 600;
     color: #fff;
-}
+} */
+
+
+
+
+/* ______________ */
+
+
 /* ✅ Гарантована адаптація для Google Pixel / Android Chrome */
 @media (max-width: 500px) {
 

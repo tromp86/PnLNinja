@@ -59,7 +59,7 @@ function startAutoUpdateInterval() {
     autoUpdateInterval = setInterval(() => {
         const inputEl = document.getElementById("symbol");
         if (inputEl.value.trim()) {
-            console.log(`⏰ Планове автооновлення`);
+            // console.log(`⏰ Планове автооновлення`);
             autoUpdateEverything(false);
         }
     }, 60000); // 60 секунд

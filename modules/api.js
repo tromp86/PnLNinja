@@ -15,7 +15,7 @@ export async function fetchMarketData(symbol) {
     const [oiResp, fResp, kResp] = await Promise.all([
         fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`),
         fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&limit=2`),
-        fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=4h&limit=500`)
+        fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=500`)
     ]);
 
     return {

@@ -164,51 +164,57 @@ function getImpulseArrows(strength) {
 function getDurationSegments({ bars, depthPct, speed }) {
   bars = Math.max(1, bars || 1);
   depthPct = Math.max(0, depthPct || 0);
-  speed = Math.max(0.3, speed || 1);
+  speed = Math.max(0.1, speed || 1);
 
-  // Кількість сегментів
-  const count = Math.min(Math.floor(bars / 1.7) + 8, 20);
+  const count = Math.min(Math.floor(bars / 1.7) + 8, 22);
 
-  // Фактори
+  // Нормалізовані фактори
   const durationFactor = Math.min(bars / 60, 1);
-  const depthFactor = Math.min(depthPct / 20, 1);
-  const speedFactor = Math.min(speed / 4, 1);
+  const depthFactor = Math.min(depthPct / 25, 1);
+  const velocity = Math.min(speed / 4, 1); // velocity = speedFactor
 
-  // Центральний індекс
+  // Центр імпульсу
   const mid = Math.floor(count / 2);
 
-  // Максимальна висота центрального бару
-  const maxH =
+  // Максимальна висота піку
+  const peakHeight =
     12 +
-    speedFactor * 18 +      // сильний імпульс → високий центр
-    durationFactor * 10;    // довгий імпульс → ще вище
+    velocity * 22 +        // швидкий імпульс → високий пік
+    durationFactor * 10 -   // довгий імпульс → трохи нижчий пік
+    depthFactor * 8;        // глибока корекція → пік нижчий
 
   const minH = 3;
 
   const heights = [];
 
   for (let i = 0; i < count; i++) {
-    const dist = Math.abs(i - mid); // відстань від центру
+    const t = i / (count - 1);
+    const dist = Math.abs(i - mid);
 
-    // Базова форма — "гора"
-    let h = maxH - dist * (maxH / count) * 1.8;
+    // ---- ACCELERATION PHASE (до піку)
+    const accel = Math.max(0, 1 - dist / mid);
 
-    // Несподіваний імпульс → різкий стрибок
-    if (speedFactor > 0.7 && i === mid - 1) {
-      h = maxH * 0.9; // різкий підйом перед піком
-    }
+    // ---- DECAY PHASE (після піку)
+    const decay = Math.exp(-dist * (0.6 + depthFactor * 1.2));
 
-    // Несподіваний імпульс → після маленького бару великий
-    if (speedFactor > 0.7 && i === mid + 1) {
-      h = maxH * 0.85;
-    }
+    // ---- VELOCITY SHAPE
+    const velocityShape =
+      Math.sin((i / count) * Math.PI) * (0.6 + velocity * 0.8);
 
-    // Глибока корекція → форма більш "рвана"
-    if (depthFactor > 0.7) {
-      h -= dist * 1.2;
-    }
+    // ---- Раптовий імпульс (unexpected spike)
+    let spike = 0;
+    if (velocity > 0.75 && i === mid - 1) spike = peakHeight * 0.35;
+    if (velocity > 0.75 && i === mid + 1) spike = peakHeight * 0.25;
 
-    // Обмеження
+    // ---- Фінальна висота
+    let h =
+      minH +
+      accel * peakHeight * 0.7 +
+      decay * peakHeight * 0.3 +
+      velocityShape * peakHeight * 0.4 +
+      spike;
+
+    // ---- Обмеження
     h = Math.max(minH, h);
 
     heights.push(Math.round(h));
