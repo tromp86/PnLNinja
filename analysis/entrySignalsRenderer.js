@@ -8,189 +8,313 @@ export function renderEntrySignals({
     return "No valid entry conditions detected (умови для входу відсутні).";
   }
 
-  let entrySignalsText = "";
+  let out = "";
+  const recent = extractRecentContext(data, 12);
 
   // =======================
-  // ⏱ LAST 2 DAYS ONLY (12 × 4H)
-  // =======================
-  const recentData = extractRecentContext(data, 12);
-
-  // =======================
-  // DERIVED METRICS (CLAMPED)
+  // DERIVED METRICS
   // =======================
   const derived = {
-    trendStability: clamp(calcTrendStability(recentData), 0.01, 1.5),
-    impulseQualityLong: clamp(calcImpulseQuality(recentData, "long"), 0.01, 1.5),
-    impulseQualityShort: clamp(calcImpulseQuality(recentData, "short"), 0.01, 1.5),
-    retracementRisk: clamp(calcRetracementRisk(recentData), 0.01, 2),
-    volumePressure: clamp(calcVolumePressureSymmetric(recentData), -1, 1),
-    volatilityRegime: clamp(calcVolatilityRegime(recentData), 0.5, 2),
+    trendStability: clamp(calcTrendStability(recent), 0.01, 1.5),
+    impulseLong: clamp(calcImpulseQuality(recent, "long"), 0.01, 1.5),
+    impulseShort: clamp(calcImpulseQuality(recent, "short"), 0.01, 1.5),
+    retracementRisk: clamp(calcRetracementRisk(recent), 0.01, 2),
+    volumePressure: clamp(calcVolumePressureSymmetric(recent), -1, 1),
+    volatilityRegime: clamp(calcVolatilityRegime(recent), 0.5, 2.5),
   };
 
-  const CONFIDENCE_MIN = 65;
+  const CONF_MIN = 58;
 
   // =======================
-  // ENTRY SIGNALS LOOP
+  // MAIN LOOP
   // =======================
   activeEntrySignals.forEach((sig) => {
-    let direction = sig.type; // "long" / "short"
+    let direction = sig.type;
     const reasons = [];
     const warnings = [];
     const stops = [];
 
-    // =======================
-    // PICK DIRECTIONAL METRICS
-    // =======================
-    const impulseQuality =
-      direction === "long"
-        ? derived.impulseQualityLong
-        : derived.impulseQualityShort;
+    const impulse =
+      direction === "long" ? derived.impulseLong : derived.impulseShort;
+    const vp = derived.volumePressure;
 
     // =======================
-    // 🔄 SYMMETRIC AUTO-FLIP (DIVERGENCE VS STRONG TREND)
+    // AUTO-FLIP (soft)
     // =======================
     if (
       sig.context === "reversal" &&
-      sig.name.toLowerCase().includes("divergence") &&
-      derived.trendStability > 0.85
+      derived.trendStability > 0.85 &&
+      impulse < 0.22
     ) {
       direction = direction === "long" ? "short" : "long";
-      warnings.push("Auto-flip: divergence against strong dominant trend");
+      warnings.push("Auto-flip: strong dominant trend vs weak reversal impulse");
     }
 
     // =======================
-    // CONTEXT LOGIC
+    // CONTEXT REASONS
     // =======================
     if (sig.context === "trend_add") {
       reasons.push("Trend-following continuation setup");
-      if (impulseQuality < 0.35)
-        warnings.push("Weak impulse for continuation");
     }
 
     if (sig.context === "reversal") {
       reasons.push("Mean-reversion / reversal setup");
-      if (impulseQuality > 0.7)
-        warnings.push("Strong opposing impulse");
     }
 
     if (sig.context === "htf_add") {
       reasons.push("Higher timeframe confirmation");
-      if (derived.trendStability < 0.45)
-        warnings.push("Weak local structure");
+    }
+
+    if (sig.context === "range") {
+      reasons.push("Range-based setup");
+    }
+
+    // ============================================================
+    // 🔥 CONTEXT-DEPENDENT IMPULSE STOP (ВАРІАНТ D)
+    // ============================================================
+    let impulseStop = 0.04;
+    let impulseWarn = 0.18;
+
+    switch (sig.context) {
+      case "htf_add":
+        impulseStop = 0.03;
+        impulseWarn = 0.10;
+        break;
+
+      case "trend_add":
+        impulseStop = 0.05;
+        impulseWarn = 0.15;
+        break;
+
+      case "reversal":
+        impulseStop = 0.08;
+        impulseWarn = 0.20;
+        break;
+
+      case "range":
+        impulseStop = 0.02;
+        impulseWarn = 0.10;
+        break;
+
+      case "momentum":
+        impulseStop = 0.05;
+        impulseWarn = 0.15;
+        break;
+
+      case "volatility":
+        impulseStop = 0.04;
+        impulseWarn = 0.12;
+        break;
+    }
+
+    if (impulse < impulseStop) {
+      stops.push("Impulse extremely weak for this context");
+    } else if (impulse < impulseWarn) {
+      warnings.push("Impulse below optimal for this context");
     }
 
     // =======================
-    // CONFIDENCE ENGINE (BALANCED LONG/SHORT)
+    // OTHER HARD STOPS
     // =======================
-    let confidence = 40;
+    if (derived.trendStability < 0.08)
+      stops.push("Market structure unstable");
 
-    // Base: signal priority
-    confidence += sig.priority * 5;
-
-    // Context weight
-    if (sig.context === "trend_add") confidence += 12;
-    if (sig.context === "reversal") confidence += 8;
-    if (sig.context === "htf_add") confidence += 10;
-
-    // Trend stability: 0–1.5 → 0–20
-    confidence += Math.floor(normalize(derived.trendStability, 0, 1.5) * 20);
-
-    // Volume pressure (symmetric: -1..+1)
-    // LONG хоче vp > 0, SHORT хоче vp < 0
-    const vp = derived.volumePressure; // -1..+1
-    if (direction === "long") {
-      confidence += Math.floor(vp * 10); // -10..+10
-    } else {
-      confidence += Math.floor(-vp * 10); // -10..+10, але дзеркально
-    }
-
-    // Impulse quality: 0–1.5 → 0–18
-    confidence += Math.floor(normalize(impulseQuality, 0, 1.5) * 18);
-
-    // Volatility regime: 0.5–2 → penalize extremes
-    const volNorm = normalize(derived.volatilityRegime, 0.5, 2); // 0–1
-    const volPenalty = Math.abs(volNorm - 0.5) * 12; // max -6
-    confidence -= Math.floor(volPenalty);
-
-    // Market strength
-    if (marketStrength?.score != null) {
-      confidence += Math.min(12, Math.floor(marketStrength.score * 0.12));
-    }
-
-    // Composite confluence
-    if (compositeActive) confidence += 6;
-
-    // =======================
-    // 🧱 HARD STOP FACTORS (OVERRIDE CONFIDENCE)
-    // =======================
-    if (impulseQuality < 0.12)
-      stops.push("Impulse quality too weak");
-
-    if (derived.trendStability < 0.18)
-      stops.push("Trend structure unstable / choppy");
-
-    // Volume pressure: не блокуємо SHORT за sell-dominance
-    if (direction === "long" && derived.volumePressure < -0.4)
-      stops.push("Sell-side volume dominance against long bias");
-
-    if (direction === "short" && derived.volumePressure > 0.4)
-      stops.push("Buy-side volume dominance against short bias");
-
-    if (derived.volatilityRegime > 1.7)
+    if (derived.volatilityRegime > 2.3)
       stops.push("Extreme volatility regime");
 
-    if (marketStrength?.score != null && marketStrength.score < 25)
+    if (derived.retracementRisk > 1.95)
+      stops.push("Retracement risk extremely high");
+
+    if (marketStrength?.score != null && marketStrength.score < 20)
       stops.push("Weak global market environment");
 
-    confidence = clamp(confidence, 5, 97);
+    if (direction === "long" && vp < -0.55)
+      stops.push("Strong sell-side dominance");
+
+    if (direction === "short" && vp > 0.55)
+      stops.push("Strong buy-side dominance");
 
     // =======================
-    // 🔥 FINAL ACTION DECISION
+    // SOFT WARNINGS
+    // =======================
+    if (derived.retracementRisk > 1.5)
+      warnings.push("High retracement risk");
+
+    if (derived.volatilityRegime > 1.8)
+      warnings.push("Elevated volatility regime");
+
+    // =======================
+    // CONFIDENCE ENGINE
+    // =======================
+    let conf = 40;
+
+    conf += sig.priority * 5;
+
+    if (sig.context === "trend_add") conf += 12;
+    if (sig.context === "reversal") conf += 8;
+    if (sig.context === "htf_add") conf += 10;
+
+    conf += Math.floor(normalize(derived.trendStability, 0, 1.5) * 20);
+
+    conf += direction === "long" ? Math.floor(vp * 10) : Math.floor(-vp * 10);
+
+    conf += Math.floor(normalize(impulse, 0, 1.5) * 18);
+
+    const volNorm = normalize(derived.volatilityRegime, 0.5, 2.5);
+    conf -= Math.floor(Math.abs(volNorm - 0.5) * 10);
+
+    if (marketStrength?.score != null)
+      conf += Math.min(10, Math.floor(marketStrength.score * 0.10));
+
+    if (compositeActive) conf += 6;
+
+    conf = clamp(conf, 5, 97);
+
+    // =======================
+    // FINAL ACTION
     // =======================
     let action = "WAIT";
-
-    if (confidence >= CONFIDENCE_MIN && stops.length === 0) {
-      action = "ENTER";
-    } else if (confidence >= CONFIDENCE_MIN && stops.length > 0) {
-      action = "AVOID";
-    }
+    if (conf >= CONF_MIN && stops.length === 0) action = "ENTER";
+    else if (conf >= CONF_MIN && stops.length > 0) action = "AVOID";
 
     // =======================
-    // OUTPUT (PREMIUM HTML-COMPATIBLE TEXT OR PLAIN TEXT)
+    // OUTPUT
     // =======================
-const dot = direction === "long" ? "🟢" : "🔴";
+    const dot = direction === "long" ? "🟢" : "🔴";
 
-entrySignalsText += `
+    out += `
 ${dot} ${direction.toUpperCase()} | ${sig.name} (priority ${sig.priority})
 
-Confidence: ${confidence}%
+Confidence: ${conf}%
 ➡ Action: ${action}
 `;
 
     if (reasons.length) {
-      entrySignalsText += `
+      out += `
 📌 Context:
 - ${reasons.join("\n- ")}
 `;
     }
 
-    if (action === "AVOID" && stops.length) {
-      entrySignalsText += `
+    if (stops.length) {
+      out += `
 🧠 Why NOT entering:
 - ${stops.join("\n- ")}
 `;
     }
 
     if (warnings.length) {
-      entrySignalsText += `
+      out += `
 ⚠ Warnings:
 - ${warnings.join("\n- ")}
 `;
     }
+
+
+    // ============================================================
+    // 🔥 ADVANCED COUNTER-TREND (5 FACTORS)
+    // ============================================================
+    const ctWarnings = [];
+    let ctConf = 0;
+    let ctAction = "WAIT";
+    let ctDirection = direction;
+
+    // 1. Weak impulse
+    const weakImpulse = impulse < 0.18;
+
+    // 2. Weak trend structure
+    const weakTrend = derived.trendStability < 0.35;
+
+    // 3. Absorption (volume pressure against direction)
+    const absorption =
+      (direction === "long" && vp < 0) ||
+      (direction === "short" && vp > 0);
+
+    // 4. HTF exhaustion
+    const htfExhaustion =
+      data.higherTF?.atrSlope < 0 || data.higherTF?.momentum < 0;
+
+    // 5. Wick dominance
+    const last = recent.candles?.at(-1);
+    let wickSignal = false;
+
+    if (last) {
+      const upperWick = last.High - Math.max(last.Close, last.Open);
+      const lowerWick = Math.min(last.Close, last.Open) - last.Low;
+      const range = last.High - last.Low;
+
+      wickSignal =
+        (direction === "long" && lowerWick > range * 0.4) ||
+        (direction === "short" && upperWick > range * 0.4);
+    }
+
+    // 6. RSI divergence
+    const rsiDiv =
+      (direction === "long" &&
+        data.RSI < data.prevRSI &&
+        data.Price > data.prevPrice) ||
+      (direction === "short" &&
+        data.RSI > data.prevRSI &&
+        data.Price < data.prevPrice);
+
+    // 7. Micro-structure shift
+    const structureShift =
+      (direction === "long" &&
+        data.localLow > data.prevLocalLow) ||
+      (direction === "short" &&
+        data.localHigh < data.prevLocalHigh);
+
+    // Count active CT factors
+    const ctFactors = [
+      weakImpulse,
+      weakTrend,
+      absorption,
+      htfExhaustion,
+      wickSignal,
+      rsiDiv,
+      structureShift,
+    ].filter(Boolean).length;
+
+    if (ctFactors >= 3) {
+      ctWarnings.push("Counter-trend conditions detected");
+
+      // CT confidence
+      ctConf = 20;
+      ctConf += weakImpulse ? 15 : 0;
+      ctConf += weakTrend ? 15 : 0;
+      ctConf += absorption ? 15 : 0;
+      ctConf += htfExhaustion ? 10 : 0;
+      ctConf += wickSignal ? 10 : 0;
+      ctConf += rsiDiv ? 15 : 0;
+      ctConf += structureShift ? 10 : 0;
+
+      if (derived.volatilityRegime > 1.7) ctConf -= 8;
+
+      ctConf = clamp(ctConf, 5, 97);
+
+      // Reverse direction
+      ctDirection = direction === "long" ? "short" : "long";
+
+      // CT action
+      if (ctConf >= CONF_MIN && stops.length === 0) ctAction = "ENTER";
+      else ctAction = "WATCH";
+    }
+
+    if (ctWarnings.length) {
+      out += `
+🔄 COUNTER-TREND | ${ctDirection.toUpperCase()}
+Confidence: ${ctConf}%
+➡ Action: ${ctAction}
+⚠ Notes:
+- ${ctWarnings.join("\n- ")}
+`;
+    }
   });
 
-  return entrySignalsText;
+  return out;
 }
+
+
 
 // =======================
 // CONTEXT EXTRACTION

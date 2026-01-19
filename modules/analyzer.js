@@ -71,7 +71,7 @@ export async function analyze() {
         // Кешування
         lastData[symbol] = { OI, funding };
 
-        console.log("Аналіз завершено:", symbol);
+        // console.log("Аналіз завершено:", symbol);
 
     } catch (err) {
         console.error("Помилка аналізу:", err);

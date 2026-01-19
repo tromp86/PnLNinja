@@ -94,7 +94,7 @@ async function autoUpdateEverything(isInstant = false) {
         // ОНОВЛЮЄМО АНАЛІЗ
         await analyze();
         
-        console.log(`✅ Оновлення завершено для: ${currentSymbol}`);
+        // console.log(`✅ Оновлення завершено для: ${currentSymbol}`);
     } catch (error) {
         console.error("❌ Помилка оновлення:", error);
     } finally {
@@ -130,7 +130,7 @@ window.onload = async () => {
         }
         
         lastSymbol = initialSymbol;
-        await autoUpdateEverything(true); // Миттєве оновлення при запуску
+        await autoUpdateEverything(true);
 
         
         // Запускаємо автооновлення

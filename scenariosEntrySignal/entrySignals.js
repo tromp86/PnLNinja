@@ -1392,4 +1392,71 @@ export const entrySignals = [
   context: "volatility",
 },
 
+{
+  id: 101,
+  type: "long",
+  name: "Counter-Trend Long (HTF Bearish Exhaustion)",
+  priority: 5,
+
+  setup: (c) => [
+    c.higherTF?.trend === "bear",        // ❗ проти HTF
+    c.RSI < 30,                          // перепроданість
+    c.Price <= c.Bollinger_L,
+  ],
+
+  trigger: (c) => [
+    c.Stochastic > 20,
+  ],
+
+  confirmation: (c) => [
+    c.MACD > c.MACD_Signal,              // momentum flip
+    c.volume > c.avgVolume,
+  ],
+
+  conditions(c) {
+    return [
+      allTrue(this.setup(c)),
+      allTrue(this.trigger(c)),
+      allTrue(this.confirmation(c)),
+    ];
+  },
+
+  context: "counter_trend",
+  counterTrend: true,
+},
+
+{
+  id: 102,
+  type: "short",
+  name: "Counter-Trend Short (HTF Bullish Exhaustion)",
+  priority: 5,
+
+  setup: (c) => [
+    c.higherTF?.trend === "bull",         // ❗ проти HTF
+    c.RSI > 70,
+    c.Price >= c.Bollinger_U,
+  ],
+
+  trigger: (c) => [
+    c.Stochastic < 80,
+  ],
+
+  confirmation: (c) => [
+    c.MACD < c.MACD_Signal,
+    c.volume > c.avgVolume,
+  ],
+
+  conditions(c) {
+    return [
+      allTrue(this.setup(c)),
+      allTrue(this.trigger(c)),
+      allTrue(this.confirmation(c)),
+    ];
+  },
+
+  context: "counter_trend",
+  counterTrend: true,
+},
+
+
 ];

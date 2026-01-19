@@ -6,6 +6,7 @@ import { fetchAllSymbols } from './api.js';
 let allSymbols = [];
 let autoSelectTimer = null;
 let symbolChangeDebounce = null;
+let emptyFieldTimer = null;
 
 export async function initSymbols() {
     allSymbols = await fetchAllSymbols();
@@ -24,9 +25,21 @@ function setupSymbolSuggestions() {
         // Очищаємо всі таймери
         if (autoSelectTimer) clearTimeout(autoSelectTimer);
         if (symbolChangeDebounce) clearTimeout(symbolChangeDebounce);
+        if (emptyFieldTimer) clearTimeout(emptyFieldTimer);
         
         if (!value) {
             box.style.display = "none";
+            
+            // Якщо поле порожнє, через 3 секунди завантажуємо BTC
+            emptyFieldTimer = setTimeout(() => {
+                input.value = "BTC";
+                if (window.manualUpdateWithCharts) {
+                    window.manualUpdateWithCharts();
+                } else if (window.autoUpdateEverything) {
+                    window.autoUpdateEverything();
+                }
+            }, 3000);
+            
             return;
         }
         
