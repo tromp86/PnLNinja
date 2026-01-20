@@ -1,3 +1,27 @@
+// /entry-engine
+// │
+// ├─ renderEntrySignals.js        // головний рендер + orchestration
+// │
+// ├─ contexRender/
+// │   └─ extractRecentContext.js
+// │
+// ├─ metricsRender/
+// │   ├─ trendStability.js
+// │   ├─ impulseQuality.js
+// │   ├─ retracementRisk.js
+// │   ├─ volumePressure.js
+// │   ├─ volatilityRegime.js
+// │
+// ├─ ct/
+// │   ├─ counterTrendEngine.js
+// │   └─ ctLevels.js
+// │
+// ├─ utils/
+// │   ├─ math.js
+// │   ├─ stats.js
+// │   └─ market.js
+
+
 export function renderEntrySignals({
   activeEntrySignals,
   compositeActive,
@@ -107,41 +131,49 @@ export function renderEntrySignals({
         break;
     }
 
-    if (impulse < impulseStop) {
-      stops.push("Impulse extremely weak for this context");
-    } else if (impulse < impulseWarn) {
-      warnings.push("Impulse below optimal for this context");
-    }
+if (impulse < impulseStop) {
+  warnings.push("Impulse weak for this context");
+}
 
-    // =======================
-    // OTHER HARD STOPS
-    // =======================
-    if (derived.trendStability < 0.08)
-      stops.push("Market structure unstable");
 
-    if (derived.volatilityRegime > 2.3)
-      stops.push("Extreme volatility regime");
+// =======================
+// OTHER HARD STOPS
+// =======================
+if (derived.trendStability < 0.08)
+  stops.push("Market structure unstable");
 
-    if (derived.retracementRisk > 1.95)
-      stops.push("Retracement risk extremely high");
+if (derived.volatilityRegime > 2.3)
+  stops.push("Extreme volatility regime");
 
-    if (marketStrength?.score != null && marketStrength.score < 20)
-      stops.push("Weak global market environment");
+if (derived.retracementRisk > 1.95)
+  stops.push("Retracement risk extremely high");
 
-    if (direction === "long" && vp < -0.55)
-      stops.push("Strong sell-side dominance");
+if (marketStrength?.score != null && marketStrength.score < 20)
+  stops.push("Weak global market environment");
 
-    if (direction === "short" && vp > 0.55)
-      stops.push("Strong buy-side dominance");
+if (direction === "long" && vp < -0.55)
+  stops.push("Strong sell-side dominance");
 
-    // =======================
-    // SOFT WARNINGS
-    // =======================
-    if (derived.retracementRisk > 1.5)
-      warnings.push("High retracement risk");
+if (direction === "short" && vp > 0.55)
+  stops.push("Strong buy-side dominance");
 
-    if (derived.volatilityRegime > 1.8)
-      warnings.push("Elevated volatility regime");
+// =======================
+// SOFT WARNINGS (expanded)
+// =======================
+if (derived.retracementRisk > 1.5)
+  warnings.push("High retracement risk");
+
+if (marketStrength?.score != null && marketStrength.score < 20)
+  warnings.push("Weak global market environment");
+
+if (derived.volatilityRegime > 1.8)
+  warnings.push("Elevated volatility regime");
+
+if (direction === "long" && vp < -0.4)
+  warnings.push("Sell pressure against long");
+
+if (direction === "short" && vp > 0.4)
+  warnings.push("Buy pressure against short");
 
     // =======================
     // CONFIDENCE ENGINE
@@ -191,50 +223,49 @@ Confidence: ${conf}%
 
     if (reasons.length) {
       out += `
-📌 Context:
-- ${reasons.join("\n- ")}
+📌 Context: ${reasons.join("\n- ")}
 `;
     }
 
     if (stops.length) {
       out += `
-🧠 Why NOT entering:
-- ${stops.join("\n- ")}
+🧠 Why NOT entering: ${stops.join("\n- ")}
 `;
     }
 
     if (warnings.length) {
       out += `
-⚠ Warnings:
-- ${warnings.join("\n- ")}
+⚠ Warnings: ${warnings.join("\n- ")}
 `;
     }
 
 
     // ============================================================
-    // 🔥 ADVANCED COUNTER-TREND (5 FACTORS)
+    // 🔥 ADVANCED COUNTER-TREND (7 FACTORS, RELAXED)
     // ============================================================
     const ctWarnings = [];
     let ctConf = 0;
     let ctAction = "WAIT";
     let ctDirection = direction;
 
-    // 1. Weak impulse
-    const weakImpulse = impulse < 0.18;
+    const CT_CONF_MIN = 48; // м’якший поріг для контр-тренду
+
+    // 1. Weak impulse (м’якше)
+    const weakImpulse = impulse < 0.22;
 
     // 2. Weak trend structure
-    const weakTrend = derived.trendStability < 0.35;
+    const weakTrend = derived.trendStability < 0.40;
 
-    // 3. Absorption (volume pressure against direction)
+    // 3. Absorption (volume pressure against direction, м’якше)
     const absorption =
-      (direction === "long" && vp < 0) ||
-      (direction === "short" && vp > 0);
+      (direction === "long" && vp < -0.1) ||
+      (direction === "short" && vp > 0.1);
 
     // 4. HTF exhaustion
     const htfExhaustion =
       data.higherTF?.atrSlope < 0 || data.higherTF?.momentum < 0;
 
-    // 5. Wick dominance
+    // 5. Wick dominance (м’якше: 25% замість 40%)
     const last = recent.candles?.at(-1);
     let wickSignal = false;
 
@@ -244,8 +275,8 @@ Confidence: ${conf}%
       const range = last.High - last.Low;
 
       wickSignal =
-        (direction === "long" && lowerWick > range * 0.4) ||
-        (direction === "short" && upperWick > range * 0.4);
+        (direction === "long" && lowerWick > range * 0.25) ||
+        (direction === "short" && upperWick > range * 0.25);
     }
 
     // 6. RSI divergence
@@ -264,7 +295,7 @@ Confidence: ${conf}%
       (direction === "short" &&
         data.localHigh < data.prevLocalHigh);
 
-    // Count active CT factors
+    // Count active CT factors (м’якше: ≥2)
     const ctFactors = [
       weakImpulse,
       weakTrend,
@@ -275,40 +306,129 @@ Confidence: ${conf}%
       structureShift,
     ].filter(Boolean).length;
 
-    if (ctFactors >= 3) {
+    if (ctFactors >= 2) {
       ctWarnings.push("Counter-trend conditions detected");
 
-      // CT confidence
-      ctConf = 20;
-      ctConf += weakImpulse ? 15 : 0;
-      ctConf += weakTrend ? 15 : 0;
-      ctConf += absorption ? 15 : 0;
-      ctConf += htfExhaustion ? 10 : 0;
+      // CT confidence (м’якше, але структурно схоже)
+      ctConf = 25;
+      ctConf += weakImpulse ? 10 : 0;
+      ctConf += weakTrend ? 10 : 0;
+      ctConf += absorption ? 12 : 0;
+      ctConf += htfExhaustion ? 8 : 0;
       ctConf += wickSignal ? 10 : 0;
-      ctConf += rsiDiv ? 15 : 0;
-      ctConf += structureShift ? 10 : 0;
+      ctConf += rsiDiv ? 12 : 0;
+      ctConf += structureShift ? 8 : 0;
 
-      if (derived.volatilityRegime > 1.7) ctConf -= 8;
+      if (derived.volatilityRegime > 2.0) ctConf -= 8;
 
       ctConf = clamp(ctConf, 5, 97);
 
       // Reverse direction
       ctDirection = direction === "long" ? "short" : "long";
 
-      // CT action
-      if (ctConf >= CONF_MIN && stops.length === 0) ctAction = "ENTER";
+      // CT action (по відношенню до CT_CONF_MIN, НЕ до CONF_MIN)
+      if (ctConf >= CT_CONF_MIN) ctAction = "ENTER";
       else ctAction = "WATCH";
-    }
 
-    if (ctWarnings.length) {
       out += `
 🔄 COUNTER-TREND | ${ctDirection.toUpperCase()}
 Confidence: ${ctConf}%
 ➡ Action: ${ctAction}
-⚠ Notes:
-- ${ctWarnings.join("\n- ")}
+⚠: ${ctWarnings.join("\n- ")}
 `;
     }
+
+    // ============================================================
+    // 🔥 CT-ENGINE (Balanced Position Building, RELAXED ACTIVATION)
+    // ============================================================
+    if (ctFactors >= 2) {
+      const atr = estimateATR(data);
+      const lastClose = getLastClose(data);
+      const riskUnit = atr || (lastClose * 0.01) || 1;
+
+      const engineDir = direction === "long" ? "short" : "long";
+
+      // CT MODES
+      const CT_MODE = "Balanced"; // "Aggressive" | "Balanced" | "Conservative"
+
+      const CT_MULT = {
+        Aggressive: {
+          entry: 0.5,
+          add: 0.8,
+          confirm: 0.1,
+          stop: 1.6,
+          target: 3.2,
+        },
+        Balanced: {
+          entry: 0.3,
+          add: 0.4,
+          confirm: 0.2,
+          stop: 1.2,
+          target: 2.4,
+        },
+        Conservative: {
+          entry: 0.15,
+          add: 0.25,
+          confirm: 0.3,
+          stop: 0.9,
+          target: 1.8,
+        },
+      }[CT_MODE];
+
+      const ctEntryPrice =
+        engineDir === "long"
+          ? lastClose - riskUnit * CT_MULT.entry
+          : lastClose + riskUnit * CT_MULT.entry;
+
+      const ctConfirmPrice =
+        engineDir === "long"
+          ? lastClose + riskUnit * CT_MULT.confirm
+          : lastClose - riskUnit * CT_MULT.confirm;
+
+      const ctAddPrice =
+        engineDir === "long"
+          ? ctEntryPrice - riskUnit * CT_MULT.add
+          : ctEntryPrice + riskUnit * CT_MULT.add;
+
+      const ctStopPrice =
+        engineDir === "long"
+          ? ctEntryPrice - riskUnit * CT_MULT.stop
+          : ctEntryPrice + riskUnit * CT_MULT.stop;
+
+      const ctTargetPrice =
+        engineDir === "long"
+          ? ctEntryPrice + riskUnit * CT_MULT.target
+          : ctEntryPrice - riskUnit * CT_MULT.target;
+
+      let ctEngineAction = "WATCH";
+
+      // ВАЖЛИВО: CT-ENGINE МОЖЕ ПРАЦЮВАТИ НАВІТЬ ПРИ STOPS,
+      // але якщо stops.length > 0 — ми не даємо ENTER_PARTIAL, тільки WATCH/CONFIRM
+      const hasHardStops = stops.length > 0;
+
+      if (ctConf >= CT_CONF_MIN && !hasHardStops) {
+        ctEngineAction = "Enter";
+      } else if (ctConf >= CT_CONF_MIN - 6) {
+        ctEngineAction = "Wait";
+      }
+
+//       out += `
+// ⚙️ CT-ENGINE (Balanced) | ${engineDir.toUpperCase()}
+// CT-Engine Confidence: ${ctConf}%
+// ➡ CT-Engine Action: ${ctEngineAction}
+
+// 📌 CT Position Levels:
+// - Entry (partial): ${ctEntryPrice.toFixed(6)}
+// - Add (scale-in): ${ctAddPrice.toFixed(6)}
+// - Confirm level: ${ctConfirmPrice.toFixed(6)}
+// - Stop (structure/ATR): ${ctStopPrice.toFixed(6)}
+// - Target (RR≈2:1): ${ctTargetPrice.toFixed(6)}
+
+// 🧩 CT Factors Triggered: ${ctFactors}/7
+// `;
+    }
+
+
   });
 
   return out;

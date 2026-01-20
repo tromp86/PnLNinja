@@ -1,7 +1,7 @@
 import { scenarios } from './scenariosEntrySignal/scenarios.js';
 import { entrySignals } from './scenariosEntrySignal/entrySignals.js';
 import { computeMarketStrength } from "./analysis/marketStrength.js";
-import { renderEntrySignals } from "./analysis/entrySignalsRenderer.js";
+import { renderEntrySignals } from "./entry-engine/entrySignalsRenderer.js";
 
 // =======================
 // ✅ Перевірка Entry Signals

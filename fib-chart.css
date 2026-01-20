@@ -188,14 +188,6 @@ border-radius: 3px;
   top: 61.8%; /* 38.2% від низу */
 }
 
-.depth-meter:hover .depth-level {
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.6) 50%,
-    rgba(255, 255, 255, 0.4) 100%
-  );
-}
 
 /* =============================== */
 /* IMPULSE DURATION — Тривалість імпульсу */
@@ -258,11 +250,6 @@ border-radius: 3px;
   opacity: 0.95;
 }
 
-/* Hover-ефект (легкий, преміальний) */
-.duration-segment:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
 
 /* =============================== */
 /* VOLUME PRESSURE - Тиск об'єму */
