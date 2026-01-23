@@ -348,7 +348,6 @@ Confidence: ${ctConf}%
 
       const engineDir = direction === "long" ? "short" : "long";
 
-      // CT MODES
       const CT_MODE = "Balanced"; // "Aggressive" | "Balanced" | "Conservative"
 
       const CT_MULT = {
@@ -402,8 +401,6 @@ Confidence: ${ctConf}%
 
       let ctEngineAction = "WATCH";
 
-      // ВАЖЛИВО: CT-ENGINE МОЖЕ ПРАЦЮВАТИ НАВІТЬ ПРИ STOPS,
-      // але якщо stops.length > 0 — ми не даємо ENTER_PARTIAL, тільки WATCH/CONFIRM
       const hasHardStops = stops.length > 0;
 
       if (ctConf >= CT_CONF_MIN && !hasHardStops) {
