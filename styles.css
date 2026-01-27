@@ -130,7 +130,7 @@ input,
 /* Output */
 .output {
   margin-top: 10px;
-  font-size: 15px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -287,20 +287,67 @@ footer div {
   font-size: 12px;
 }
 
-#analysisWrapper {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1.2fr 0.6fr 0.5fr; /* перша більша */
-  gap: 12px;
-  color: #e5e7eb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  box-sizing: border-box;
+/* ===============================
+   Pentagon Wrapper
+=============================== */
+#pentagonWrapper {
+    position: relative;
+    width: 100%;   /* займе всю доступну колонку */
+    aspect-ratio: 1;
+    max-width: 200px;  /* бажаний розмір */
+    margin: auto;
+    background: #111;
+    border-radius: 12px;
+     transform: translateX(-20px);
 }
 
 
+/* ===============================
+   Pentagon Shape
+=============================== */
+#pentagonShape {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #121212;
+    clip-path: polygon(50% 0%, 90% 35%, 72% 90%, 28% 90%, 10% 35%);
+    transition: clip-path 0.15s ease, background 0.15s ease;
+}
+
+/* ===============================
+   Pentagon Labels
+=============================== */
+.pentagon-label {
+    position: absolute;
+    font-size: 11px;
+    color: #fff;
+    text-align: center;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: top 0.35s ease, left 0.35s ease;
+    white-space: nowrap;
+}
+
+.pentagon-label span {
+    display: block;
+    font-size: 9px;
+    opacity: 0.6;
+}
+
+
+#analysisWrapper {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 0.6fr 0.6fr 0.4fr 0.4fr; 
+    gap: 8px;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    box-sizing: border-box;
+}
+
 .output,
 .outputFuaters,
-.outputCt {
+.outputCt{
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   text-rendering: optimizeLegibility;
@@ -326,11 +373,11 @@ footer div {
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .entry-header .dot {
-  font-size: 17px;
+  font-size: 12px;
 }
 
 .entry-header .direction {
@@ -347,13 +394,13 @@ footer div {
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #ffffff;
-  text-shadow: 0 0 10px rgba(76, 201, 240, 0.3);
   padding: 0 10px;
+  font-size: 12px;
 }
 
 .entry-header .priority {
   margin-left: auto;
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
 }
 
@@ -408,13 +455,11 @@ footer div {
   gap: 6px;
 }
 
-/* Основні рядки */
 .ct-line {
   font-size: 13px;
   margin: 2px 0;
 }
 
-/* Секція попереджень */
 .ct-section {
   margin-top: 8px;
   padding-top: 4px;
@@ -425,7 +470,7 @@ footer div {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 3px;
-  color: #ffd97a; /* жовтий акцент */
+  color: #ffd97a;
 }
 
 .ct-section > div {
@@ -690,62 +735,7 @@ footer div {
   }
 }
 
-/* .reasons,
-.warnings {
-  font-size: 13px;
-  margin: 6px 0;
-  padding: 7px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  backdrop-filter: blur(4px);
-} */
 
-/* Зелені причини */
-/* .reasons {
-  background: rgba(88, 149, 122, 0.12);
-  border-left: 3px solid rgba(157, 255, 211, 0.5);
-  color: rgb(218, 255, 241);
-}
-
-
-.warnings {
-  background: rgba(170, 163, 138, 0.12);
-  border-left: 3px solid rgba(114, 109, 91, 0.5);
-  color: rgb(255, 243, 221);
-}
-
-.signal-block {
-    font-family: 'Inter', sans-serif;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(5px, auto));
-    justify-content: start;
-    padding-top: 8px;
-    padding-right: 10px;
-    background: rgba(20, 23, 28, 0.55);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    width: fit-content;
-}
-
-.sb-item {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: row;
-    gap: 6px;
-    font-size: 14px;
-    color: #e5e5e5;
-    white-space: nowrap;
-    padding: 0px;
-}
-
-.sb-item span {
-    opacity: 0.75;
-}
-
-.sb-item strong {
-    font-weight: 600;
-    color: #fff;
-} */
 
 /* ______________ */
 
@@ -871,5 +861,101 @@ footer div {
     padding-top: 1px;
     font-size: 10px;
     text-align: center;
+  }
+}
+
+
+
+/* =========================
+   📱 MOBILE / SMALL SCREENS
+   ========================= */
+@media (max-width: 900px) {
+  #analysisWrapper {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .output,
+  .outputFuaters,
+  .outputCt {
+    margin-top: 6px;
+    padding: 8px;
+  }
+
+  /* ENTRY */
+  .entry-block {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .entry-header {
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .entry-header .name {
+    padding: 0;
+    font-size: 13px;
+    white-space: normal;
+    text-overflow: unset;
+  }
+
+  .entry-header .priority {
+    font-size: 10px;
+  }
+
+  .entry-line {
+    font-size: 12px;
+  }
+
+  .entry-section .section-title {
+    font-size: 12px;
+  }
+
+  /* CT BLOCK */
+  .ct-block {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .ct-header {
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+
+  .ct-line {
+    font-size: 12px;
+  }
+
+  .ct-title {
+    font-size: 12px;
+  }
+
+  .ct-section > div {
+    font-size: 11px;
+  }
+}
+
+/* =========================
+   📱 VERY SMALL PHONES
+   ========================= */
+@media (max-width: 480px) {
+  .entry-header .dot {
+    font-size: 15px;
+  }
+
+  .entry-header .direction {
+    font-size: 12px;
+  }
+
+  .entry-header .name {
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+
+  .entry-line,
+  .ct-line {
+    font-size: 11.5px;
   }
 }
