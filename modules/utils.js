@@ -2,11 +2,11 @@
 // UTILITY FUNCTIONS
 // ===============================
 
-let countdown = 60;
+let countdown = 120;
 let countdownInterval = null;
 
 export function startCountdown() {
-    countdown = 60;
+    countdown = 120;
     
     if (countdownInterval) {
         clearInterval(countdownInterval);

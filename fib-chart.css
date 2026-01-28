@@ -1,7 +1,7 @@
 .wrapCanvasFib {
   background: rgba(46, 53, 69, 0.4);
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -53,7 +53,7 @@
 .short-item {
   background: linear-gradient(0deg, #1a1a1a 0%, #14141a 100%);
   padding: 3px 4px;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid rgba(251, 255, 0, 0.206);
   min-height: 7px;
   display: flex;

@@ -54,7 +54,7 @@ h3:hover {
 .wrapCanvas {
   background: rgba(46, 53, 69, 0.4);
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -307,11 +307,13 @@ footer div {
 =============================== */
 #pentagonShape {
     position: absolute;
+    top: 0; left: 0;
     width: 100%;
     height: 100%;
-    background: #121212;
-    clip-path: polygon(50% 0%, 90% 35%, 72% 90%, 28% 90%, 10% 35%);
-    transition: clip-path 0.15s ease, background 0.15s ease;
+    background: transparent;       /* спочатку прозорий */
+    clip-path: polygon(50% 50%,50% 50%,50% 50%,50% 50%,50% 50%); /* стартові точки в центрі */
+    transition: clip-path 0.6s ease, background 0.6s ease;
+    border-radius: 8px;
 }
 
 /* ===============================
@@ -319,13 +321,14 @@ footer div {
 =============================== */
 .pentagon-label {
     position: absolute;
-    font-size: 11px;
-    color: #fff;
-    text-align: center;
-    pointer-events: none;
     transform: translate(-50%, -50%);
-    transition: top 0.35s ease, left 0.35s ease;
-    white-space: nowrap;
+    color: #e5e7eb;
+    font-size: 10px;
+    text-align: center;
+    line-height: 1.2;
+    opacity: 0;                    /* спочатку прозорі */
+    transition: left 0.6s ease, top 0.6s ease, opacity 0.6s ease;
+    pointer-events: none;           /* щоб не заважали миші */
 }
 
 .pentagon-label span {
@@ -338,21 +341,24 @@ footer div {
 #analysisWrapper {
     width: 100%;
     display: grid;
-    grid-template-columns: 0.6fr 0.6fr 0.4fr 0.4fr; 
+    grid-template-columns: 0.7fr 0.6fr 0.3fr 0.5fr; 
     gap: 8px;
     color: #e5e7eb;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 10px;
+    padding: 6px;
+    border-radius: 6px;
 }
 
 .output,
 .outputFuaters,
 .outputCt{
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
   text-rendering: optimizeLegibility;
   color: rgb(255, 229, 229);
-  margin-top: 10px;
+  margin-top: 1px;
   padding: 8px 10px;
   border-radius: 6px;
 }
